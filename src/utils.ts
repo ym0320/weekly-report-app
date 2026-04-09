@@ -2,39 +2,29 @@ import type { Category, CategoryEntry } from './types';
 
 export function generateCategoryOutput(
   category: Category,
-  entries: CategoryEntry[],
-  emailAddresses: string
+  allEntries: CategoryEntry[],
+  _emailAddresses: string // 後方互換のため残すが使わない
 ): string {
-  if (category.isEmail) {
-    return emailAddresses.trim();
-  }
+  // isEmailカテゴリの処理はメイン側で対応するため空文字返す
+  if (category.isEmail) return '';
 
-  const entry = entries.find((e) => e.categoryId === category.id);
+  const entry = allEntries.find((e) => e.categoryId === category.id);
+  if (!entry) return '';
+
   const lines: string[] = [];
-
   for (const subItem of category.subItems) {
-    const subEntry = entry?.subItemEntries.find((se) => se.subItemId === subItem.id);
+    const subEntry = entry.subItemEntries.find((se) => se.subItemId === subItem.id);
     const value = subEntry?.value?.trim() ?? '';
-
     if (!value) continue;
 
-    if (subItem.label === '') {
-      // ラベルなし: 値のみ出力
+    if (!subItem.label) {
       lines.push(value);
     } else if (subItem.label.includes('●')) {
-      // インライン: ●を値で置換
       lines.push(subItem.label.replace('●', value));
-    } else if (subItem.type === 'select') {
-      // selectの場合: ラベル → 全角スペース2つ + 値
-      lines.push(subItem.label);
-      lines.push('\u3000\u3000' + value);
     } else {
-      // textの場合: ラベル → 値
-      lines.push(subItem.label);
-      lines.push(value);
+      lines.push(`${subItem.label}: ${value}`);
     }
   }
-
   return lines.join('\n');
 }
 

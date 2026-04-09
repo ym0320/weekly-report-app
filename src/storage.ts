@@ -19,6 +19,8 @@ export function loadData(): AppData {
       settings: {
         categories: DEFAULT_CATEGORIES,
         emailAddresses: DEFAULT_EMAIL_ADDRESSES,
+        offices: [],
+        emailList: [],
       },
       reports: [],
     };
@@ -32,6 +34,8 @@ export function loadData(): AppData {
       settings: {
         categories: DEFAULT_CATEGORIES,
         emailAddresses: DEFAULT_EMAIL_ADDRESSES,
+        offices: [],
+        emailList: [],
       },
       reports: [],
     };
@@ -45,7 +49,22 @@ export function saveData(data: AppData): void {
 }
 
 export function getSettings(): AppSettings {
-  return loadData().settings;
+  const data = loadData();
+  const s = data.settings;
+  // 新フィールドがない場合の初期化
+  if (!s.offices) s.offices = [];
+  if (!s.emailList) {
+    // 旧 emailAddresses 文字列をemailListに移行
+    if (s.emailAddresses) {
+      s.emailList = s.emailAddresses
+        .split(';')
+        .map((e) => e.trim())
+        .filter((e) => e.length > 0);
+    } else {
+      s.emailList = [];
+    }
+  }
+  return s;
 }
 
 export function saveSettings(settings: AppSettings): void {

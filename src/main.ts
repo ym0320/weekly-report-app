@@ -1,5 +1,5 @@
 import './style.css';
-import type { Category, CategoryEntry, SubItemEntry } from './types';
+import type { Category, CategoryEntry, SubItem, SubItemEntry } from './types';
 import {
   getSettings,
   saveReport,
@@ -54,8 +54,74 @@ function getSubItemValue(categoryId: string, subItemId: string): string {
   return entry?.subItemEntries.find((se) => se.subItemId === subItemId)?.value ?? '';
 }
 
+// ===== Office master combo box =====
+function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices: string[]): HTMLElement {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'field-group';
+
+  if (subItem.label) {
+    const lbl = document.createElement('label');
+    lbl.className = 'field-label';
+    lbl.textContent = subItem.label;
+    wrapper.appendChild(lbl);
+  }
+
+  const combo = document.createElement('div');
+  combo.className = 'office-combo';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'field-input office-search-input';
+  input.placeholder = '事務所名を検索または直接入力...';
+  input.value = getSubItemValue(category.id, subItem.id);
+
+  const dropdown = document.createElement('div');
+  dropdown.className = 'office-dropdown';
+  dropdown.style.display = 'none';
+
+  const showDropdown = (filter: string) => {
+    dropdown.innerHTML = '';
+    const filtered = offices.filter((o) => o.includes(filter));
+    if (filtered.length === 0) {
+      dropdown.style.display = 'none';
+      return;
+    }
+    filtered.forEach((office) => {
+      const item = document.createElement('div');
+      item.className = 'office-dropdown-item';
+      item.textContent = office;
+      item.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        input.value = office;
+        setSubItemValue(category.id, subItem.id, office);
+        dropdown.style.display = 'none';
+      });
+      dropdown.appendChild(item);
+    });
+    dropdown.style.display = 'block';
+  };
+
+  input.addEventListener('input', () => {
+    setSubItemValue(category.id, subItem.id, input.value);
+    showDropdown(input.value);
+  });
+  input.addEventListener('focus', () => showDropdown(input.value));
+  input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; }, 150));
+
+  combo.appendChild(input);
+  combo.appendChild(dropdown);
+  wrapper.appendChild(combo);
+  return wrapper;
+}
+
 // ===== Render sub item =====
-function renderSubItem(category: Category, subItem: typeof category.subItems[0]): HTMLElement {
+function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
+  // useOfficeMaster チェックを最初に
+  if (subItem.useOfficeMaster) {
+    const settings = getSettings();
+    return renderOfficeMasterSubItem(category, subItem, settings.offices);
+  }
+
   const wrapper = document.createElement('div');
   wrapper.className = 'field-group';
 
@@ -150,15 +216,78 @@ function renderSubItem(category: Category, subItem: typeof category.subItems[0])
 }
 
 // ===== Render body inner (reused for reset) =====
-function renderBodyInner(category: Category, emailAddresses: string): HTMLElement {
+function renderBodyInner(category: Category): HTMLElement {
   const bodyInner = document.createElement('div');
   bodyInner.className = 'category-body-inner';
 
   if (category.isEmail) {
-    const emailDiv = document.createElement('div');
-    emailDiv.className = 'email-display';
-    emailDiv.textContent = emailAddresses || '（設定でメールアドレスを入力してください）';
-    bodyInner.appendChild(emailDiv);
+    const settings = getSettings();
+    const emailList = settings.emailList;
+
+    // このカテゴリのcurrentEntryから選択中メールを取得
+    // subItemId: '__email_selection__', value: JSON.stringify(string[])
+    const emailEntry = currentEntries.find((e) => e.categoryId === category.id);
+    const selectionEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+    let selectedEmails: string[] = selectionEntry
+      ? JSON.parse(selectionEntry.value || '[]')
+      : [...emailList]; // デフォルト: 全選択
+
+    // 選択を保存する関数
+    const saveSelection = () => {
+      setSubItemValue(category.id, '__email_selection__', JSON.stringify(selectedEmails));
+    };
+
+    // 初回: デフォルトを保存
+    if (!selectionEntry && emailList.length > 0) {
+      saveSelection();
+    }
+
+    if (emailList.length === 0) {
+      const hint = document.createElement('p');
+      hint.className = 'email-empty-hint';
+      hint.textContent = '設定でメールアドレスを登録してください';
+      bodyInner.appendChild(hint);
+    } else {
+      // 各メールをトグル可能な行として表示
+      emailList.forEach((email) => {
+        const isSelected = selectedEmails.includes(email);
+        const row = document.createElement('div');
+        row.className = `email-row ${isSelected ? 'email-row-on' : 'email-row-off'}`;
+
+        const toggle = document.createElement('button');
+        toggle.className = `email-toggle ${isSelected ? 'on' : 'off'}`;
+        toggle.textContent = isSelected ? '✓' : '−';
+        toggle.title = isSelected ? '今回除外' : '今回追加';
+
+        const label = document.createElement('span');
+        label.className = 'email-row-label';
+        label.textContent = email;
+
+        toggle.addEventListener('click', () => {
+          if (selectedEmails.includes(email)) {
+            selectedEmails = selectedEmails.filter((e) => e !== email);
+            row.classList.replace('email-row-on', 'email-row-off');
+            toggle.classList.replace('on', 'off');
+            toggle.textContent = '−';
+            toggle.title = '今回追加';
+          } else {
+            selectedEmails.push(email);
+            row.classList.replace('email-row-off', 'email-row-on');
+            toggle.classList.replace('off', 'on');
+            toggle.textContent = '✓';
+            toggle.title = '今回除外';
+          }
+          saveSelection();
+          label.classList.toggle('dimmed', !selectedEmails.includes(email));
+        });
+
+        if (!isSelected) label.classList.add('dimmed');
+
+        row.appendChild(toggle);
+        row.appendChild(label);
+        bodyInner.appendChild(row);
+      });
+    }
   } else {
     for (const subItem of category.subItems) {
       bodyInner.appendChild(renderSubItem(category, subItem));
@@ -232,8 +361,7 @@ function renderInactiveCard(category: Category): HTMLElement {
   const activate = () => {
     selectedCategoryIds.add(category.id);
     saveSelectedCategoryIds(Array.from(selectedCategoryIds));
-    const settings = getSettings();
-    const activeCard = renderActiveCard(category, settings.emailAddresses);
+    const activeCard = renderActiveCard(category);
     card.replaceWith(activeCard);
   };
 
@@ -250,7 +378,7 @@ function renderInactiveCard(category: Category): HTMLElement {
 }
 
 // ===== Render active card =====
-function renderActiveCard(category: Category, emailAddresses: string): HTMLElement {
+function renderActiveCard(category: Category): HTMLElement {
   const card = document.createElement('div');
   card.className = 'category-card selected open';
   card.dataset.categoryId = category.id;
@@ -300,7 +428,7 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
   const body = document.createElement('div');
   body.className = 'category-body';
 
-  let bodyInner = renderBodyInner(category, emailAddresses);
+  let bodyInner = renderBodyInner(category);
   body.appendChild(bodyInner);
 
   card.appendChild(header);
@@ -312,9 +440,20 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
   });
 
   // Copy button
-  copyBtn.addEventListener('click', (e) => {
+  copyBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const output = generateCategoryOutput(category, currentEntries, emailAddresses);
+    let output: string;
+
+    if (category.isEmail) {
+      const emailEntry = currentEntries.find((en) => en.categoryId === category.id);
+      const selEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+      const selected: string[] = selEntry ? JSON.parse(selEntry.value || '[]') : [];
+      output = selected.join('; ');
+    } else {
+      const settings = getSettings();
+      output = generateCategoryOutput(category, currentEntries, settings.emailAddresses);
+    }
+
     if (!output.trim()) {
       showToast(`「${category.name}」に入力がありません`, 'error');
       return;
@@ -341,7 +480,7 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
     if (!ok) return;
     currentEntries = currentEntries.filter((en) => en.categoryId !== category.id);
     saveCurrentEntries(currentEntries);
-    const newBodyInner = renderBodyInner(category, emailAddresses);
+    const newBodyInner = renderBodyInner(category);
     body.replaceChild(newBodyInner, bodyInner);
     bodyInner = newBodyInner;
     showToast(`${category.name}をリセットしました`, 'info');
@@ -362,9 +501,9 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
 }
 
 // ===== Render category card =====
-function renderCategoryCard(category: Category, emailAddresses: string): HTMLElement {
+function renderCategoryCard(category: Category): HTMLElement {
   return selectedCategoryIds.has(category.id)
-    ? renderActiveCard(category, emailAddresses)
+    ? renderActiveCard(category)
     : renderInactiveCard(category);
 }
 
@@ -375,7 +514,7 @@ function renderCategories(): void {
   list.innerHTML = '';
 
   for (const cat of settings.categories) {
-    list.appendChild(renderCategoryCard(cat, settings.emailAddresses));
+    list.appendChild(renderCategoryCard(cat));
   }
 }
 

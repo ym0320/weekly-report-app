@@ -6,7 +6,8 @@ import { generateId } from './utils';
 
 // ===== State =====
 let categories: Category[] = [];
-let emailAddresses = '';
+let emailList: string[] = [];
+let offices: string[] = [];
 let isDirty = false;
 
 // ===== Toast =====
@@ -286,6 +287,29 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   row1.appendChild(delBtn);
   fields.appendChild(row1);
 
+  // useOfficeMaster toggle (only for text type)
+  if (subItem.type === 'text') {
+    const officeMasterRow = document.createElement('div');
+    officeMasterRow.className = 'sub-item-row';
+
+    const officeMasterCb = document.createElement('input');
+    officeMasterCb.type = 'checkbox';
+    officeMasterCb.checked = subItem.useOfficeMaster ?? false;
+    officeMasterCb.addEventListener('change', () => {
+      subItem.useOfficeMaster = officeMasterCb.checked;
+      markDirty();
+    });
+
+    const officeMasterLabel = document.createElement('label');
+    officeMasterLabel.textContent = '事務所マスターを使用';
+    officeMasterLabel.style.fontSize = '12px';
+    officeMasterLabel.style.color = 'var(--text-muted)';
+    officeMasterLabel.prepend(officeMasterCb);
+
+    officeMasterRow.appendChild(officeMasterLabel);
+    fields.appendChild(officeMasterRow);
+  }
+
   // Options list (only for select type)
   if (subItem.type === 'select') {
     const optList = document.createElement('div');
@@ -419,6 +443,72 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   return item;
 }
 
+// ===== Render email list =====
+function renderEmailList(): void {
+  const container = document.getElementById('emailListContainer')!;
+  container.innerHTML = '';
+  emailList.forEach((email, index) => {
+    const row = document.createElement('div');
+    row.className = 'email-master-row';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'email-master-input';
+    input.value = email;
+    input.placeholder = 'メールアドレスを入力';
+    input.addEventListener('input', () => {
+      emailList[index] = input.value;
+      markDirty();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => {
+      emailList.splice(index, 1);
+      markDirty();
+      renderEmailList();
+    });
+
+    row.appendChild(input);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
+// ===== Render office list =====
+function renderOfficeList(): void {
+  const container = document.getElementById('officeListContainer')!;
+  container.innerHTML = '';
+  offices.forEach((office, index) => {
+    const row = document.createElement('div');
+    row.className = 'office-master-row';
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'office-master-input';
+    input.value = office;
+    input.placeholder = '事務所名を入力';
+    input.addEventListener('input', () => {
+      offices[index] = input.value;
+      markDirty();
+    });
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-sm';
+    delBtn.textContent = '削除';
+    delBtn.addEventListener('click', () => {
+      offices.splice(index, 1);
+      markDirty();
+      renderOfficeList();
+    });
+
+    row.appendChild(input);
+    row.appendChild(delBtn);
+    container.appendChild(row);
+  });
+}
+
 // ===== Render cat list =====
 function renderCatList(): void {
   const list = document.getElementById('catList')!;
@@ -443,7 +533,9 @@ function doSaveSettings(): void {
       ...cat,
       subItems: cat.subItems.map((si) => ({ ...si })),
     })),
-    emailAddresses,
+    emailAddresses: emailList.join('; '), // 後方互換
+    emailList: [...emailList],
+    offices: [...offices],
   };
 
   saveSettings(settings);
@@ -468,16 +560,24 @@ function init(): void {
     ...cat,
     subItems: cat.subItems.map((si) => ({ ...si })),
   }));
-  emailAddresses = settings.emailAddresses;
+  emailList = [...settings.emailList];
+  offices = [...settings.offices];
 
-  const emailInput = document.getElementById('emailAddresses') as HTMLInputElement;
-  emailInput.value = emailAddresses;
-  emailInput.addEventListener('input', () => {
-    emailAddresses = emailInput.value;
+  renderEmailList();
+  renderOfficeList();
+  renderCatList();
+
+  document.getElementById('addEmailBtn')!.addEventListener('click', () => {
+    emailList.push('');
     markDirty();
+    renderEmailList();
   });
 
-  renderCatList();
+  document.getElementById('addOfficeBtn')!.addEventListener('click', () => {
+    offices.push('');
+    markDirty();
+    renderOfficeList();
+  });
 
   document.getElementById('addCatBtn')!.addEventListener('click', () => {
     categories.push({

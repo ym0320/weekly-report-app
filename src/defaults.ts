@@ -64,6 +64,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
         label: '(2) 会員事務所名',
         type: 'text',
         options: [],
+        useOfficeMaster: true,
       },
       {
         id: 'sub-3-3',
@@ -109,6 +110,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
         label: '(2) 会員事務所名',
         type: 'text',
         options: [],
+        useOfficeMaster: true,
       },
       {
         id: 'sub-4-3',
@@ -139,6 +141,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
         label: '(1) 会員事務所名',
         type: 'text',
         options: [],
+        useOfficeMaster: true,
       },
       {
         id: 'sub-5-2',
@@ -175,6 +178,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
         label: '(2) 会員事務所名',
         type: 'text',
         options: [],
+        useOfficeMaster: true,
       },
       {
         id: 'sub-6-3',
