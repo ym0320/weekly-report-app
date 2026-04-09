@@ -1,10 +1,10 @@
-import './style.css';
 import type { WeeklyReport } from './types';
 import { getReports, getSettings } from './storage';
 import { formatDate } from './utils';
 
 // ===== State =====
 let allReports: WeeklyReport[] = [];
+let historyInitialized = false;
 
 // ===== Filter =====
 function filterReports(): WeeklyReport[] {
@@ -15,16 +15,12 @@ function filterReports(): WeeklyReport[] {
   const settings = getSettings();
 
   return allReports.filter((report) => {
-    // Date range filter
     if (dateFrom && report.date < dateFrom) return false;
     if (dateTo && report.date > dateTo) return false;
-
-    // Text filter
     if (searchText) {
       const haystack = buildSearchText(report, settings.categories);
       if (!haystack.includes(searchText)) return false;
     }
-
     return true;
   });
 }
@@ -63,7 +59,6 @@ function renderHistory(): void {
     return;
   }
 
-  // Sort descending by date
   const sorted = [...filtered].sort((a, b) => b.date.localeCompare(a.date));
 
   for (const report of sorted) {
@@ -140,7 +135,6 @@ function renderHistory(): void {
     card.appendChild(header);
     card.appendChild(body);
 
-    // Toggle
     header.addEventListener('click', () => {
       card.classList.toggle('open');
     });
@@ -149,15 +143,17 @@ function renderHistory(): void {
   }
 }
 
-// ===== Init =====
-function init(): void {
+// ===== Init (exported, called by router) =====
+export function initHistory(): void {
+  // 毎回: 最新データを読み込んで再レンダリング
   allReports = getReports();
-
   renderHistory();
+
+  // 一度だけ: フィルター入力のイベント登録
+  if (historyInitialized) return;
+  historyInitialized = true;
 
   document.getElementById('dateFrom')!.addEventListener('input', renderHistory);
   document.getElementById('dateTo')!.addEventListener('input', renderHistory);
   document.getElementById('searchText')!.addEventListener('input', renderHistory);
 }
-
-init();

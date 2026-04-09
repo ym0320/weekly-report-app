@@ -1,4 +1,3 @@
-import './style.css';
 import type { Category, SubItem } from './types';
 import { getSettings, saveSettings, exportBackup, importBackup } from './storage';
 import type { BackupData } from './storage';
@@ -9,6 +8,7 @@ let categories: Category[] = [];
 let emailList: string[] = [];
 let offices: string[] = [];
 let isDirty = false;
+let settingsInitialized = false;
 
 // ===== Toast =====
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
@@ -136,11 +136,7 @@ function setupSubDragAndDrop(item: HTMLElement, catId: string, subIndex: number)
     e.preventDefault();
     e.stopPropagation();
     item.classList.remove('drag-over');
-    if (
-      dragSrcSubIndex === null ||
-      dragSrcSubCatId !== catId ||
-      dragSrcSubIndex === subIndex
-    ) return;
+    if (dragSrcSubIndex === null || dragSrcSubCatId !== catId || dragSrcSubIndex === subIndex) return;
     const cat = categories.find((c) => c.id === catId);
     if (!cat) return;
     const moved = cat.subItems.splice(dragSrcSubIndex, 1)[0];
@@ -179,7 +175,6 @@ function createOptionItem(subItem: SubItem, optIndex: number, optList: HTMLEleme
     renderCatList();
   });
 
-  // Drag events (scoped to this option list)
   item.addEventListener('dragstart', (e) => {
     e.stopPropagation();
     dragSrcOptIndex = optIndex;
@@ -210,11 +205,7 @@ function createOptionItem(subItem: SubItem, optIndex: number, optList: HTMLEleme
     e.preventDefault();
     e.stopPropagation();
     item.classList.remove('drag-over');
-    if (
-      dragSrcOptIndex === null ||
-      dragSrcOptSubId !== subItem.id ||
-      dragSrcOptIndex === optIndex
-    ) return;
+    if (dragSrcOptIndex === null || dragSrcOptSubId !== subItem.id || dragSrcOptIndex === optIndex) return;
     const moved = subItem.options.splice(dragSrcOptIndex, 1)[0];
     subItem.options.splice(optIndex, 0, moved);
     markDirty();
@@ -241,7 +232,6 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   const fields = document.createElement('div');
   fields.className = 'sub-item-fields';
 
-  // Row 1: ラベル + 削除ボタン（右端）
   const labelRow = document.createElement('div');
   labelRow.className = 'sub-item-label-row';
 
@@ -268,7 +258,6 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   labelRow.appendChild(delBtn);
   fields.appendChild(labelRow);
 
-  // Row 2: タイプ選択 + オプション
   const typeRow = document.createElement('div');
   typeRow.className = 'sub-item-type-row';
 
@@ -290,7 +279,6 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   });
   typeRow.appendChild(typeSelect);
 
-  // useOfficeMaster toggle (only for text type)
   if (subItem.type === 'text') {
     const officeMasterCb = document.createElement('input');
     officeMasterCb.type = 'checkbox';
@@ -312,7 +300,6 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
 
   fields.appendChild(typeRow);
 
-  // Options list (only for select type)
   if (subItem.type === 'select') {
     const optList = document.createElement('div');
     optList.className = 'options-list';
@@ -346,7 +333,6 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   item.className = 'cat-item';
   item.dataset.catId = cat.id;
 
-  // Header
   const header = document.createElement('div');
   header.className = 'cat-item-header';
 
@@ -394,7 +380,6 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   header.appendChild(toggleBtn);
   header.appendChild(delBtn);
 
-  // Body
   const body = document.createElement('div');
   body.className = 'cat-item-body';
 
@@ -410,12 +395,7 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
     addSubBtn.className = 'btn btn-secondary btn-sm';
     addSubBtn.textContent = '+ サブ項目追加';
     addSubBtn.addEventListener('click', () => {
-      cat.subItems.push({
-        id: generateId(),
-        label: '',
-        type: 'text',
-        options: [],
-      });
+      cat.subItems.push({ id: generateId(), label: '', type: 'text', options: [] });
       markDirty();
       renderCatList();
     });
@@ -433,7 +413,6 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   item.appendChild(header);
   item.appendChild(body);
 
-  // Toggle accordion
   toggleBtn.addEventListener('click', () => {
     const isOpen = body.classList.contains('open');
     body.classList.toggle('open', !isOpen);
@@ -454,14 +433,15 @@ function setupListDragAndDrop(
   rerender: () => void
 ): void {
   item.setAttribute('draggable', 'true');
+
   item.addEventListener('dragstart', (e) => {
     e.stopPropagation();
+    container.dataset.dragSrc = String(index);
     item.classList.add('dragging');
     (e.dataTransfer as DataTransfer).effectAllowed = 'move';
   });
   item.addEventListener('dragend', (e) => {
     e.stopPropagation();
-    item.classList.remove('dragging');
     container.querySelectorAll('.dragging, .drag-over').forEach((el) => {
       el.classList.remove('dragging', 'drag-over');
     });
@@ -479,16 +459,12 @@ function setupListDragAndDrop(
     e.preventDefault();
     e.stopPropagation();
     item.classList.remove('drag-over');
-    // dragSrcIndex is captured per-item at render time; use dataset for cross-item communication
     const srcIdx = Number(container.dataset.dragSrc);
     if (isNaN(srcIdx) || srcIdx === index) return;
     const moved = list.splice(srcIdx, 1)[0];
     list.splice(index, 0, moved);
     markDirty();
     rerender();
-  });
-  item.addEventListener('dragstart', () => {
-    container.dataset.dragSrc = String(index);
   });
 }
 
@@ -590,7 +566,6 @@ function renderCatList(): void {
 
 // ===== Save settings =====
 function doSaveSettings(): void {
-  // Validate: check for empty category names
   for (const cat of categories) {
     if (!cat.name.trim()) {
       showToast('カテゴリ名が空のものがあります', 'error');
@@ -603,7 +578,7 @@ function doSaveSettings(): void {
       ...cat,
       subItems: cat.subItems.map((si) => ({ ...si })),
     })),
-    emailAddresses: emailList.join('; '), // 後方互換
+    emailAddresses: emailList.join('; '),
     emailList: [...emailList],
     offices: [...offices],
   };
@@ -611,35 +586,34 @@ function doSaveSettings(): void {
   saveSettings(settings);
   isDirty = false;
   showToast('設定を保存しました', 'success');
-
-  // Remove beforeunload
-  window.removeEventListener('beforeunload', beforeUnloadHandler);
 }
 
-// ===== beforeunload =====
-function beforeUnloadHandler(e: BeforeUnloadEvent): void {
-  if (isDirty) {
-    e.preventDefault();
-  }
-}
-
-// ===== Init =====
-function init(): void {
-  const settings = getSettings();
-  categories = settings.categories.map((cat) => ({
+// ===== Init (exported, called by router) =====
+export function initSettings(): () => boolean {
+  // 毎回: ストレージから再読み込み＆再レンダリング
+  const saved = getSettings();
+  categories = saved.categories.map((cat) => ({
     ...cat,
     subItems: cat.subItems.map((si) => ({ ...si })),
   }));
-  emailList = [...settings.emailList];
-  offices = [...settings.offices];
+  emailList = [...saved.emailList];
+  offices = [...saved.offices];
+  isDirty = false;
 
   renderEmailList();
   renderOfficeList();
   renderCatList();
 
-  // ===== 項目の設計 編集トグル =====
-  const editDesignBtn = document.getElementById('editDesignBtn')!;
+  // 設定編集エリアをリセット（再訪時は閉じた状態に）
   const designEditArea = document.getElementById('designEditArea')!;
+  const editDesignBtn = document.getElementById('editDesignBtn')!;
+  designEditArea.style.display = 'none';
+  editDesignBtn.textContent = '編集';
+
+  // 一度だけ: 静的要素のイベントリスナー登録
+  if (settingsInitialized) return () => isDirty;
+  settingsInitialized = true;
+
   editDesignBtn.addEventListener('click', () => {
     const isOpen = designEditArea.style.display !== 'none';
     designEditArea.style.display = isOpen ? 'none' : 'block';
@@ -647,7 +621,6 @@ function init(): void {
   });
 
   const newEmailInput = document.getElementById('newEmailInput') as HTMLInputElement;
-  const addEmailBtn = document.getElementById('addEmailBtn')!;
   const doAddEmail = () => {
     const prefix = newEmailInput.value.trim();
     if (!prefix) { showToast('メールアドレスを入力してください', 'error'); return; }
@@ -658,11 +631,10 @@ function init(): void {
     newEmailInput.value = '';
     newEmailInput.focus();
   };
-  addEmailBtn.addEventListener('click', doAddEmail);
+  document.getElementById('addEmailBtn')!.addEventListener('click', doAddEmail);
   newEmailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAddEmail(); });
 
   const newOfficeInput = document.getElementById('newOfficeInput') as HTMLInputElement;
-  const addOfficeBtn = document.getElementById('addOfficeBtn')!;
   const doAddOffice = () => {
     const name = newOfficeInput.value.trim();
     if (!name) { showToast('事務所名を入力してください', 'error'); return; }
@@ -673,22 +645,17 @@ function init(): void {
     newOfficeInput.value = '';
     newOfficeInput.focus();
   };
-  addOfficeBtn.addEventListener('click', doAddOffice);
+  document.getElementById('addOfficeBtn')!.addEventListener('click', doAddOffice);
   newOfficeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAddOffice(); });
 
   document.getElementById('addCatBtn')!.addEventListener('click', () => {
-    categories.push({
-      id: generateId(),
-      name: '新しいカテゴリ',
-      subItems: [],
-    });
+    categories.push({ id: generateId(), name: '新しいカテゴリ', subItems: [] });
     markDirty();
     renderCatList();
   });
 
   document.getElementById('saveSettingsBtn')!.addEventListener('click', doSaveSettings);
 
-  // ===== Export =====
   document.getElementById('exportBtn')!.addEventListener('click', () => {
     const backup = exportBackup();
     const json = JSON.stringify(backup, null, 2);
@@ -705,7 +672,6 @@ function init(): void {
     showToast('エクスポートしました', 'success');
   });
 
-  // ===== Import =====
   document.getElementById('importBtn')!.addEventListener('click', () => {
     document.getElementById('importInput')!.click();
   });
@@ -725,14 +691,12 @@ function init(): void {
       const text = await file.text();
       const backup = JSON.parse(text) as BackupData;
       importBackup(backup);
-      showToast('インポート完了。ページを再読み込みします...', 'success');
+      showToast('インポート完了。再読み込みします...', 'success');
       setTimeout(() => location.reload(), 1500);
     } catch {
       showToast('インポートに失敗しました。ファイル形式を確認してください', 'error');
     }
   });
 
-  window.addEventListener('beforeunload', beforeUnloadHandler);
+  return () => isDirty;
 }
-
-init();

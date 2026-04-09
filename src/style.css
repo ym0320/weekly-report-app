@@ -17,9 +17,24 @@
   padding: 0;
 }
 
-/* iOS自動ズーム防止: input/select/textareaのfont-sizeは16px以上 */
+/* iOS自動ズーム防止: input/select/textareaのfont-sizeは16px以上（!importantで上書き防止） */
 input, select, textarea {
-  font-size: 16px;
+  font-size: 16px !important;
+}
+
+/* ===== SPA ページ切り替え ===== */
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+  animation: pageFadeIn 0.15s ease;
+}
+
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 body {

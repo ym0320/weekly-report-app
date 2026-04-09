@@ -1,4 +1,3 @@
-import './style.css';
 import type { Category, CategoryEntry, SubItem, SubItemEntry } from './types';
 import {
   getSettings,
@@ -15,6 +14,8 @@ let currentEntries: CategoryEntry[] = [];
 let selectedCategoryIds: Set<string> = new Set();
 let currentReportDate: string = '';
 const DATE_STORAGE_KEY = 'weeklyReportApp_selectedDate';
+
+let mainInitialized = false;
 
 // ===== Date display =====
 function updateDateDisplay(): void {
@@ -119,7 +120,6 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
 
 // ===== Render sub item =====
 function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
-  // useOfficeMaster チェックを最初に
   if (subItem.useOfficeMaster) {
     const settings = getSettings();
     return renderOfficeMasterSubItem(category, subItem, settings.offices);
@@ -128,7 +128,6 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'field-group';
 
-  // defaultValue: 未入力時はデフォルト値を使用（特記事項など）
   const storedValue = getSubItemValue(category.id, subItem.id);
   const value = storedValue !== '' ? storedValue : (subItem.defaultValue ?? '');
 
@@ -161,7 +160,6 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     wrapper.appendChild(sel);
 
   } else if (subItem.label.includes('●')) {
-    // Inline form
     const parts = subItem.label.split('●');
     const inlineWrapper = document.createElement('div');
     inlineWrapper.className = 'inline-field-wrapper';
@@ -192,7 +190,6 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     wrapper.appendChild(inlineWrapper);
 
   } else if (subItem.label === '') {
-    // No label, just textarea
     const textarea = document.createElement('textarea');
     textarea.className = 'field-textarea';
     textarea.value = value;
@@ -202,7 +199,6 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     wrapper.appendChild(textarea);
 
   } else {
-    // Label + textarea
     const lbl = document.createElement('label');
     lbl.className = 'field-label';
     lbl.textContent = subItem.label;
@@ -220,7 +216,7 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
   return wrapper;
 }
 
-// ===== Render body inner (reused for reset) =====
+// ===== Render body inner =====
 function renderBodyInner(category: Category): HTMLElement {
   const bodyInner = document.createElement('div');
   bodyInner.className = 'category-body-inner';
@@ -228,23 +224,17 @@ function renderBodyInner(category: Category): HTMLElement {
   if (category.isEmail) {
     const settings = getSettings();
     const emailList = settings.emailList;
-
-    // このカテゴリのcurrentEntryから選択中メールを取得
-    // subItemId: '__email_selection__', value: JSON.stringify(string[])
     const emailEntry = currentEntries.find((e) => e.categoryId === category.id);
     const selectionEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
-    // emailListはプレフィックスのみ保存。表示・コピーはフルアドレスを使う
     const fullEmailList = emailList.map(toFullEmail).filter(Boolean);
     let selectedEmails: string[] = selectionEntry
       ? JSON.parse(selectionEntry.value || '[]')
-      : [...fullEmailList]; // デフォルト: 全選択
+      : [...fullEmailList];
 
-    // 選択を保存する関数
     const saveSelection = () => {
       setSubItemValue(category.id, '__email_selection__', JSON.stringify(selectedEmails));
     };
 
-    // 初回: デフォルトを保存
     if (!selectionEntry && fullEmailList.length > 0) {
       saveSelection();
     }
@@ -255,7 +245,6 @@ function renderBodyInner(category: Category): HTMLElement {
       hint.textContent = '設定でメールアドレスを登録してください';
       bodyInner.appendChild(hint);
     } else {
-      // 各メールをトグル可能な行として表示
       fullEmailList.forEach((email) => {
         const isSelected = selectedEmails.includes(email);
         const row = document.createElement('div');
@@ -350,7 +339,6 @@ function renderInactiveCard(category: Category): HTMLElement {
   const nameSpan = document.createElement('span');
   nameSpan.className = 'category-name inactive-name';
   nameSpan.textContent = category.name;
-
   headerLeft.appendChild(nameSpan);
 
   const headerRight = document.createElement('div');
@@ -390,7 +378,6 @@ function renderActiveCard(category: Category): HTMLElement {
   card.className = 'category-card selected open';
   card.dataset.categoryId = category.id;
 
-  // Header
   const header = document.createElement('div');
   header.className = 'category-header';
 
@@ -427,14 +414,12 @@ function renderActiveCard(category: Category): HTMLElement {
 
   headerRight.appendChild(copyBtn);
   headerRight.appendChild(resetBtn);
-  // メールカテゴリは必須なので✕（選択解除）ボタンを非表示
   if (!category.isEmail) {
     headerRight.appendChild(deselectBtn);
   }
   header.appendChild(headerLeft);
   header.appendChild(headerRight);
 
-  // Body
   const body = document.createElement('div');
   body.className = 'category-body';
 
@@ -444,7 +429,6 @@ function renderActiveCard(category: Category): HTMLElement {
   card.appendChild(header);
   card.appendChild(body);
 
-  // Accordion toggle (header-left only)
   headerLeft.addEventListener('click', () => {
     card.classList.toggle('open');
   });
@@ -488,7 +472,7 @@ function renderActiveCard(category: Category): HTMLElement {
     });
   });
 
-  // Reset button (category-level)
+  // Reset button
   resetBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
     const ok = await showConfirm(`「${category.name}」の入力内容をリセットしますか？`, 'リセット');
@@ -504,7 +488,6 @@ function renderActiveCard(category: Category): HTMLElement {
   // Deselect button
   deselectBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    // 入力済みデータがあるか確認
     const entry = currentEntries.find((en) => en.categoryId === category.id);
     const hasData = entry?.subItemEntries.some((se) => se.value.trim()) ?? false;
     if (hasData) {
@@ -537,7 +520,6 @@ function renderCategories(): void {
   const settings = getSettings();
   const list = document.getElementById('categoryList')!;
   list.innerHTML = '';
-
   for (const cat of settings.categories) {
     list.appendChild(renderCategoryCard(cat));
   }
@@ -550,10 +532,8 @@ function openSaveModal(): void {
     document.getElementById('mainDateInput')?.focus();
     return;
   }
-  const [, m, d] = currentReportDate.split('-').map(Number);
-  const dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(
-    Number(currentReportDate.split('-')[0]), m - 1, d
-  ).getDay()];
+  const [y, m, d] = currentReportDate.split('-').map(Number);
+  const dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(y, m - 1, d).getDay()];
   document.getElementById('saveModalDateText')!.textContent = `${m}月${d}日（${dow}）の週報を保存しますか？`;
   document.getElementById('saveModal')!.classList.add('active');
 }
@@ -581,20 +561,23 @@ function saveWeeklyReport(): void {
   showToast('週報を保存しました', 'success');
 }
 
-// ===== Init =====
-function init(): void {
-  // Restore state
+// ===== Init (exported, called by router) =====
+export function initMain(): void {
+  // 毎回: 状態復元 + 再レンダリング
   currentEntries = getCurrentEntries();
   selectedCategoryIds = new Set(getSelectedCategoryIds());
 
-  // メールカテゴリは常に選択状態にする
   const settings = getSettings();
   for (const cat of settings.categories) {
     if (cat.isEmail) selectedCategoryIds.add(cat.id);
   }
   saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+  renderCategories();
 
-  // 日付の復元
+  // 一度だけ: 静的要素のイベントリスナー登録
+  if (mainInitialized) return;
+  mainInitialized = true;
+
   currentReportDate = localStorage.getItem(DATE_STORAGE_KEY) ?? '';
   const mainDateInput = document.getElementById('mainDateInput') as HTMLInputElement;
   mainDateInput.value = currentReportDate;
@@ -606,16 +589,10 @@ function init(): void {
     updateDateDisplay();
   });
 
-  renderCategories();
-
   document.getElementById('saveBtn')!.addEventListener('click', openSaveModal);
   document.getElementById('modalCancelBtn')!.addEventListener('click', closeSaveModal);
   document.getElementById('modalSaveBtn')!.addEventListener('click', saveWeeklyReport);
-
-  // Close modal on overlay click
   document.getElementById('saveModal')!.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeSaveModal();
   });
 }
-
-init();
