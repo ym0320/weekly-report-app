@@ -13,6 +13,23 @@ import { generateCategoryOutput, generateId, toFullEmail } from './utils';
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
 let selectedCategoryIds: Set<string> = new Set();
+let currentReportDate: string = '';
+const DATE_STORAGE_KEY = 'weeklyReportApp_selectedDate';
+
+// ===== Date display =====
+function updateDateDisplay(): void {
+  const display = document.getElementById('reportDateDisplay')!;
+  const card = document.getElementById('reportDateCard')!;
+  if (currentReportDate) {
+    const [y, m, d] = currentReportDate.split('-').map(Number);
+    const dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(y, m - 1, d).getDay()];
+    display.textContent = `${m}月${d}日（${dow}）の週報`;
+    card.classList.add('has-date');
+  } else {
+    display.textContent = '日付を選択してください';
+    card.classList.remove('has-date');
+  }
+}
 
 // ===== Toast =====
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
@@ -449,6 +466,11 @@ function renderActiveCard(category: Category): HTMLElement {
   // Copy button
   copyBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
+    if (!currentReportDate) {
+      showToast('日付を先に選択してください', 'error');
+      document.getElementById('mainDateInput')?.focus();
+      return;
+    }
     let output: string;
 
     if (category.isEmail) {
@@ -527,33 +549,27 @@ function renderCategories(): void {
 
 // ===== Save modal =====
 function openSaveModal(): void {
-  const modal = document.getElementById('saveModal')!;
-  const dateInput = document.getElementById('reportDate') as HTMLInputElement;
-  // Default to today
-  const today = new Date();
-  const yyyy = today.getFullYear();
-  const mm = String(today.getMonth() + 1).padStart(2, '0');
-  const dd = String(today.getDate()).padStart(2, '0');
-  dateInput.value = `${yyyy}-${mm}-${dd}`;
-  modal.classList.add('active');
+  if (!currentReportDate) {
+    showToast('日付を先に選択してください', 'error');
+    document.getElementById('mainDateInput')?.focus();
+    return;
+  }
+  const [, m, d] = currentReportDate.split('-').map(Number);
+  const dow = ['日', '月', '火', '水', '木', '金', '土'][new Date(
+    Number(currentReportDate.split('-')[0]), m - 1, d
+  ).getDay()];
+  document.getElementById('saveModalDateText')!.textContent = `${m}月${d}日（${dow}）の週報を保存しますか？`;
+  document.getElementById('saveModal')!.classList.add('active');
 }
 
 function closeSaveModal(): void {
-  const modal = document.getElementById('saveModal')!;
-  modal.classList.remove('active');
+  document.getElementById('saveModal')!.classList.remove('active');
 }
 
 function saveWeeklyReport(): void {
-  const dateInput = document.getElementById('reportDate') as HTMLInputElement;
-  const date = dateInput.value;
-  if (!date) {
-    showToast('日付を選択してください', 'error');
-    return;
-  }
-
   const report = {
     id: generateId(),
-    date,
+    date: currentReportDate,
     categoryEntries: currentEntries.map((e) => ({
       categoryId: e.categoryId,
       subItemEntries: e.subItemEntries.map((se): SubItemEntry => ({
@@ -581,6 +597,18 @@ function init(): void {
     if (cat.isEmail) selectedCategoryIds.add(cat.id);
   }
   saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+
+  // 日付の復元
+  currentReportDate = localStorage.getItem(DATE_STORAGE_KEY) ?? '';
+  const mainDateInput = document.getElementById('mainDateInput') as HTMLInputElement;
+  mainDateInput.value = currentReportDate;
+  updateDateDisplay();
+
+  mainDateInput.addEventListener('change', () => {
+    currentReportDate = mainDateInput.value;
+    localStorage.setItem(DATE_STORAGE_KEY, currentReportDate);
+    updateDateDisplay();
+  });
 
   renderCategories();
 

@@ -16,6 +16,15 @@
   </header>
 
   <main class="main-content">
+    <!-- 日付選択 -->
+    <div class="report-date-card" id="reportDateCard">
+      <div class="report-date-top">
+        <span class="report-date-label">週報の日付<span class="report-date-required">*</span></span>
+        <input type="date" id="mainDateInput" class="report-date-input" />
+      </div>
+      <div id="reportDateDisplay" class="report-date-display">日付を選択してください</div>
+    </div>
+
     <div id="categoryList"></div>
     <div class="save-area">
       <button id="saveBtn" class="btn btn-primary">この週報を保存</button>
@@ -26,10 +35,7 @@
   <div id="saveModal" class="modal-overlay">
     <div class="modal">
       <h2>週報を保存</h2>
-      <div class="field-group">
-        <label class="field-label" for="reportDate">日付</label>
-        <input type="date" id="reportDate" class="field-input" />
-      </div>
+      <p id="saveModalDateText" class="save-modal-date-text"></p>
       <div class="modal-actions">
         <button id="modalCancelBtn" class="btn btn-secondary">キャンセル</button>
         <button id="modalSaveBtn" class="btn btn-primary">保存</button>

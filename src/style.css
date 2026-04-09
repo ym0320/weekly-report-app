@@ -349,6 +349,69 @@ body {
   min-height: 36px;
 }
 
+/* ===== Report date card ===== */
+.report-date-card {
+  background: var(--surface);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+  transition: border-color 0.2s;
+  cursor: pointer;
+}
+
+.report-date-card.has-date {
+  border-color: var(--primary);
+}
+
+.report-date-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-date-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.report-date-required {
+  color: var(--danger);
+  margin-left: 2px;
+}
+
+.report-date-input {
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  text-align: right;
+}
+
+.report-date-display {
+  margin-top: 8px;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--text-muted);
+}
+
+.report-date-card.has-date .report-date-display {
+  color: var(--primary);
+}
+
+.save-modal-date-text {
+  font-size: 15px;
+  color: var(--text);
+  text-align: center;
+  margin: 8px 0 4px;
+}
+
 /* ===== Save button area ===== */
 .save-area {
   margin-top: 24px;
