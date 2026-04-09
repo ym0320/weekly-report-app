@@ -71,7 +71,7 @@ function getSubItemValue(categoryId: string, subItemId: string): string {
   return entry?.subItemEntries.find((se) => se.subItemId === subItemId)?.value ?? '';
 }
 
-// ===== Office master combo box =====
+// ===== Office master select =====
 function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices: string[]): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'field-group';
@@ -83,51 +83,37 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
     wrapper.appendChild(lbl);
   }
 
-  const combo = document.createElement('div');
-  combo.className = 'office-combo';
+  const stored = getSubItemValue(category.id, subItem.id);
 
-  const input = document.createElement('input');
-  input.type = 'text';
-  input.className = 'field-input office-search-input';
-  input.placeholder = '事務所名を検索または直接入力...';
-  input.value = getSubItemValue(category.id, subItem.id);
+  if (offices.length === 0) {
+    const hint = document.createElement('p');
+    hint.className = 'office-empty-hint';
+    hint.textContent = '設定で事務所を登録してください';
+    wrapper.appendChild(hint);
+    return wrapper;
+  }
 
-  const dropdown = document.createElement('div');
-  dropdown.className = 'office-dropdown';
-  dropdown.style.display = 'none';
+  const sel = document.createElement('select');
+  sel.className = 'field-select';
 
-  const showDropdown = (filter: string) => {
-    dropdown.innerHTML = '';
-    const filtered = offices.filter((o) => o.includes(filter));
-    if (filtered.length === 0) {
-      dropdown.style.display = 'none';
-      return;
-    }
-    filtered.forEach((office) => {
-      const item = document.createElement('div');
-      item.className = 'office-dropdown-item';
-      item.textContent = office;
-      item.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        input.value = office;
-        setSubItemValue(category.id, subItem.id, office);
-        dropdown.style.display = 'none';
-      });
-      dropdown.appendChild(item);
-    });
-    dropdown.style.display = 'block';
-  };
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = '-- 選択 --';
+  sel.appendChild(emptyOpt);
 
-  input.addEventListener('input', () => {
-    setSubItemValue(category.id, subItem.id, input.value);
-    showDropdown(input.value);
+  for (const office of offices) {
+    const opt = document.createElement('option');
+    opt.value = office;
+    opt.textContent = office;
+    if (office === stored) opt.selected = true;
+    sel.appendChild(opt);
+  }
+
+  sel.addEventListener('change', () => {
+    setSubItemValue(category.id, subItem.id, sel.value);
   });
-  input.addEventListener('focus', () => showDropdown(input.value));
-  input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; }, 150));
 
-  combo.appendChild(input);
-  combo.appendChild(dropdown);
-  wrapper.appendChild(combo);
+  wrapper.appendChild(sel);
   return wrapper;
 }
 
