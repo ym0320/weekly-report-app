@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>設定 - 週報</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div style="display:flex; align-items:center; gap:12px;">
+      <a href="/index.html" class="btn btn-secondary btn-icon">← 戻る</a>
+      <h1>設定</h1>
+    </div>
+  </header>
+
+  <main class="main-content" id="mainContent">
+    <!-- マスター設定 -->
+    <div class="settings-section">
+      <h2>マスター設定</h2>
+      <div class="field-group">
+        <label class="field-label" for="emailAddresses">報告先メールアドレス</label>
+        <input
+          type="text"
+          id="emailAddresses"
+          class="email-input"
+          placeholder="例: aaa@example.com; bbb@example.com"
+        />
+        <p class="email-hint">セミコロン（;）区切りで複数入力できます</p>
+      </div>
+    </div>
+
+    <!-- 大項目の管理 -->
+    <div class="settings-section">
+      <h2>大項目の管理</h2>
+      <div id="catList" class="cat-list"></div>
+      <button id="addCatBtn" class="btn btn-secondary" style="margin-top:12px;">+ 大項目追加</button>
+    </div>
+  </main>
+
+  <div class="sticky-footer">
+    <button id="saveSettingsBtn" class="btn btn-primary">設定を保存</button>
+  </div>
+
+  <div id="toastContainer" class="toast-container"></div>
+
+  <script type="module" src="/src/settings.ts"></script>
+</body>
+</html>
