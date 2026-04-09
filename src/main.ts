@@ -518,10 +518,20 @@ function renderActiveCard(category: Category): HTMLElement {
   // Deselect button
   deselectBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    const ok = await showConfirm(`「${category.name}」を選択から外しますか？`, '外す');
-    if (!ok) return;
+    // 入力済みデータがあるか確認
+    const entry = currentEntries.find((en) => en.categoryId === category.id);
+    const hasData = entry?.subItemEntries.some((se) => se.value.trim()) ?? false;
+    if (hasData) {
+      const ok = await showConfirm(
+        `「${category.name}」を使用しない状態に戻すと、入力した内容が消えます。外しますか？`,
+        '外す'
+      );
+      if (!ok) return;
+    }
     selectedCategoryIds.delete(category.id);
     saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+    currentEntries = currentEntries.filter((en) => en.categoryId !== category.id);
+    saveCurrentEntries(currentEntries);
     const inactiveCard = renderInactiveCard(category);
     card.replaceWith(inactiveCard);
   });
