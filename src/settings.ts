@@ -29,6 +29,10 @@ function markDirty(): void {
 // ===== Drag and Drop for categories =====
 let dragSrcCatIndex: number | null = null;
 
+// ===== Drag and Drop for options =====
+let dragSrcOptIndex: number | null = null;
+let dragSrcOptSubId: string | null = null;
+
 function setupCatDragAndDrop(item: HTMLElement, index: number): void {
   item.setAttribute('draggable', 'true');
 
@@ -114,6 +118,83 @@ function setupSubDragAndDrop(item: HTMLElement, catId: string, subIndex: number)
   });
 }
 
+// ===== Create option item for select type =====
+function createOptionItem(subItem: SubItem, optIndex: number, optList: HTMLElement): HTMLElement {
+  const item = document.createElement('div');
+  item.className = 'option-item';
+  item.setAttribute('draggable', 'true');
+
+  const handle = document.createElement('span');
+  handle.className = 'drag-handle';
+  handle.textContent = '≡';
+  handle.title = 'ドラッグして並べ替え';
+
+  const input = document.createElement('input');
+  input.type = 'text';
+  input.className = 'option-input';
+  input.value = subItem.options[optIndex];
+  input.addEventListener('input', () => {
+    subItem.options[optIndex] = input.value;
+    markDirty();
+  });
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.className = 'option-delete-btn';
+  deleteBtn.textContent = '×';
+  deleteBtn.addEventListener('click', () => {
+    subItem.options.splice(optIndex, 1);
+    markDirty();
+    renderCatList();
+  });
+
+  // Drag events (scoped to this option list)
+  item.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    dragSrcOptIndex = optIndex;
+    dragSrcOptSubId = subItem.id;
+    item.classList.add('dragging');
+  });
+
+  item.addEventListener('dragend', (e) => {
+    e.stopPropagation();
+    item.classList.remove('dragging');
+    dragSrcOptIndex = null;
+    dragSrcOptSubId = null;
+    optList.querySelectorAll('.option-item').forEach((el) => el.classList.remove('drag-over'));
+  });
+
+  item.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    item.classList.add('drag-over');
+  });
+
+  item.addEventListener('dragleave', (e) => {
+    e.stopPropagation();
+    item.classList.remove('drag-over');
+  });
+
+  item.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    item.classList.remove('drag-over');
+    if (
+      dragSrcOptIndex === null ||
+      dragSrcOptSubId !== subItem.id ||
+      dragSrcOptIndex === optIndex
+    ) return;
+    const moved = subItem.options.splice(dragSrcOptIndex, 1)[0];
+    subItem.options.splice(optIndex, 0, moved);
+    markDirty();
+    renderCatList();
+  });
+
+  item.appendChild(handle);
+  item.appendChild(input);
+  item.appendChild(deleteBtn);
+  return item;
+}
+
 // ===== Render sub item in settings =====
 function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number): HTMLElement {
   const item = document.createElement('div');
@@ -174,27 +255,26 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   row1.appendChild(delBtn);
   fields.appendChild(row1);
 
-  // Options row (only for select type)
+  // Options list (only for select type)
   if (subItem.type === 'select') {
-    const optionsInput = document.createElement('input');
-    optionsInput.type = 'text';
-    optionsInput.className = 'sub-options-input';
-    optionsInput.placeholder = '選択肢をカンマ区切りで入力 例: 選択肢A, 選択肢B';
-    optionsInput.value = subItem.options.join(', ');
-    optionsInput.addEventListener('input', () => {
-      subItem.options = optionsInput.value
-        .split(',')
-        .map((s) => s.trim())
-        .filter((s) => s.length > 0);
-      markDirty();
+    const optList = document.createElement('div');
+    optList.className = 'options-list';
+
+    subItem.options.forEach((_opt, optIndex) => {
+      optList.appendChild(createOptionItem(subItem, optIndex, optList));
     });
 
-    const optHint = document.createElement('p');
-    optHint.className = 'sub-options-hint';
-    optHint.textContent = '選択肢をカンマ区切りで入力';
+    const addOptBtn = document.createElement('button');
+    addOptBtn.className = 'btn btn-secondary btn-sm';
+    addOptBtn.textContent = '＋ 選択肢を追加';
+    addOptBtn.addEventListener('click', () => {
+      subItem.options.push('新しい選択肢');
+      markDirty();
+      renderCatList();
+    });
 
-    fields.appendChild(optionsInput);
-    fields.appendChild(optHint);
+    fields.appendChild(optList);
+    fields.appendChild(addOptBtn);
   }
 
   item.appendChild(fields);

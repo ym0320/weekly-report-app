@@ -78,3 +78,15 @@ export function saveCurrentEntries(entries: CategoryEntry[]): void {
 export function clearCurrentEntries(): void {
   localStorage.removeItem(CURRENT_ENTRIES_KEY);
 }
+
+const SELECTED_CATS_KEY = 'weeklyReportApp_selectedCats';
+
+export function getSelectedCategoryIds(): string[] {
+  const raw = localStorage.getItem(SELECTED_CATS_KEY);
+  if (!raw) return [];
+  try { return JSON.parse(raw) as string[]; } catch { return []; }
+}
+
+export function saveSelectedCategoryIds(ids: string[]): void {
+  localStorage.setItem(SELECTED_CATS_KEY, JSON.stringify(ids));
+}

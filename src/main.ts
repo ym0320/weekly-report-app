@@ -1,10 +1,18 @@
 import './style.css';
 import type { Category, CategoryEntry, SubItemEntry } from './types';
-import { getSettings, saveReport, getCurrentEntries, saveCurrentEntries, clearCurrentEntries } from './storage';
+import {
+  getSettings,
+  saveReport,
+  getCurrentEntries,
+  saveCurrentEntries,
+  getSelectedCategoryIds,
+  saveSelectedCategoryIds,
+} from './storage';
 import { generateCategoryOutput, generateId } from './utils';
 
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
+let selectedCategoryIds: Set<string> = new Set();
 
 // ===== Toast =====
 function showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
@@ -141,10 +149,80 @@ function renderSubItem(category: Category, subItem: typeof category.subItems[0])
   return wrapper;
 }
 
-// ===== Render category card =====
-function renderCategoryCard(category: Category, emailAddresses: string): HTMLElement {
+// ===== Render body inner (reused for reset) =====
+function renderBodyInner(category: Category, emailAddresses: string): HTMLElement {
+  const bodyInner = document.createElement('div');
+  bodyInner.className = 'category-body-inner';
+
+  if (category.isEmail) {
+    const emailDiv = document.createElement('div');
+    emailDiv.className = 'email-display';
+    emailDiv.textContent = emailAddresses || '（設定でメールアドレスを入力してください）';
+    bodyInner.appendChild(emailDiv);
+  } else {
+    for (const subItem of category.subItems) {
+      bodyInner.appendChild(renderSubItem(category, subItem));
+    }
+  }
+
+  return bodyInner;
+}
+
+// ===== Render inactive card =====
+function renderInactiveCard(category: Category): HTMLElement {
   const card = document.createElement('div');
   card.className = 'category-card';
+  card.dataset.categoryId = category.id;
+
+  const header = document.createElement('div');
+  header.className = 'category-header';
+  header.style.cursor = 'pointer';
+
+  const headerLeft = document.createElement('div');
+  headerLeft.className = 'category-header-left';
+
+  const nameSpan = document.createElement('span');
+  nameSpan.className = 'category-name inactive-name';
+  nameSpan.textContent = category.name;
+
+  headerLeft.appendChild(nameSpan);
+
+  const headerRight = document.createElement('div');
+  headerRight.className = 'category-header-right';
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn-add-category';
+  addBtn.textContent = '＋ 使用する';
+
+  headerRight.appendChild(addBtn);
+  header.appendChild(headerLeft);
+  header.appendChild(headerRight);
+  card.appendChild(header);
+
+  const activate = () => {
+    selectedCategoryIds.add(category.id);
+    saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+    const settings = getSettings();
+    const activeCard = renderActiveCard(category, settings.emailAddresses);
+    card.replaceWith(activeCard);
+  };
+
+  header.addEventListener('click', (e) => {
+    if (e.target === addBtn) return;
+    activate();
+  });
+  addBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    activate();
+  });
+
+  return card;
+}
+
+// ===== Render active card =====
+function renderActiveCard(category: Category, emailAddresses: string): HTMLElement {
+  const card = document.createElement('div');
+  card.className = 'category-card selected open';
   card.dataset.categoryId = category.id;
 
   // Header
@@ -153,6 +231,7 @@ function renderCategoryCard(category: Category, emailAddresses: string): HTMLEle
 
   const headerLeft = document.createElement('div');
   headerLeft.className = 'category-header-left';
+  headerLeft.style.cursor = 'pointer';
 
   const icon = document.createElement('span');
   icon.className = 'accordion-icon';
@@ -172,7 +251,18 @@ function renderCategoryCard(category: Category, emailAddresses: string): HTMLEle
   copyBtn.className = 'btn btn-secondary btn-sm';
   copyBtn.textContent = 'コピー';
 
+  const resetBtn = document.createElement('button');
+  resetBtn.className = 'btn btn-ghost btn-sm';
+  resetBtn.textContent = 'リセット';
+
+  const deselectBtn = document.createElement('button');
+  deselectBtn.className = 'btn-deselect';
+  deselectBtn.textContent = '✕';
+  deselectBtn.title = '使用しない';
+
   headerRight.appendChild(copyBtn);
+  headerRight.appendChild(resetBtn);
+  headerRight.appendChild(deselectBtn);
   header.appendChild(headerLeft);
   header.appendChild(headerRight);
 
@@ -180,25 +270,13 @@ function renderCategoryCard(category: Category, emailAddresses: string): HTMLEle
   const body = document.createElement('div');
   body.className = 'category-body';
 
-  const bodyInner = document.createElement('div');
-  bodyInner.className = 'category-body-inner';
-
-  if (category.isEmail) {
-    const emailDiv = document.createElement('div');
-    emailDiv.className = 'email-display';
-    emailDiv.textContent = emailAddresses || '（設定でメールアドレスを入力してください）';
-    bodyInner.appendChild(emailDiv);
-  } else {
-    for (const subItem of category.subItems) {
-      bodyInner.appendChild(renderSubItem(category, subItem));
-    }
-  }
-
+  let bodyInner = renderBodyInner(category, emailAddresses);
   body.appendChild(bodyInner);
+
   card.appendChild(header);
   card.appendChild(body);
 
-  // Accordion toggle
+  // Accordion toggle (header-left only)
   headerLeft.addEventListener('click', () => {
     card.classList.toggle('open');
   });
@@ -226,7 +304,36 @@ function renderCategoryCard(category: Category, emailAddresses: string): HTMLEle
     });
   });
 
+  // Reset button (category-level)
+  resetBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    // Remove this category's entry from currentEntries
+    currentEntries = currentEntries.filter((en) => en.categoryId !== category.id);
+    saveCurrentEntries(currentEntries);
+    // Re-render body inner
+    const newBodyInner = renderBodyInner(category, emailAddresses);
+    body.replaceChild(newBodyInner, bodyInner);
+    bodyInner = newBodyInner;
+    showToast(`${category.name}をリセットしました`, 'info');
+  });
+
+  // Deselect button
+  deselectBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    selectedCategoryIds.delete(category.id);
+    saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+    const inactiveCard = renderInactiveCard(category);
+    card.replaceWith(inactiveCard);
+  });
+
   return card;
+}
+
+// ===== Render category card =====
+function renderCategoryCard(category: Category, emailAddresses: string): HTMLElement {
+  return selectedCategoryIds.has(category.id)
+    ? renderActiveCard(category, emailAddresses)
+    : renderInactiveCard(category);
 }
 
 // ===== Render all categories =====
@@ -238,14 +345,6 @@ function renderCategories(): void {
   for (const cat of settings.categories) {
     list.appendChild(renderCategoryCard(cat, settings.emailAddresses));
   }
-}
-
-// ===== Reset =====
-function resetAll(): void {
-  currentEntries = [];
-  clearCurrentEntries();
-  renderCategories();
-  showToast('リセットしました', 'info');
 }
 
 // ===== Save modal =====
@@ -294,12 +393,12 @@ function saveWeeklyReport(): void {
 
 // ===== Init =====
 function init(): void {
-  // Restore current entries
+  // Restore state
   currentEntries = getCurrentEntries();
+  selectedCategoryIds = new Set(getSelectedCategoryIds());
 
   renderCategories();
 
-  document.getElementById('resetBtn')!.addEventListener('click', resetAll);
   document.getElementById('saveBtn')!.addEventListener('click', openSaveModal);
   document.getElementById('modalCancelBtn')!.addEventListener('click', closeSaveModal);
   document.getElementById('modalSaveBtn')!.addEventListener('click', saveWeeklyReport);

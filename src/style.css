@@ -128,6 +128,48 @@ body {
   margin-bottom: 16px;
 }
 
+/* ===== Inactive / active card styles ===== */
+.category-name.inactive-name {
+  color: var(--text-muted);
+}
+
+.btn-add-category {
+  padding: 4px 12px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.btn-deselect {
+  padding: 4px 8px;
+  font-size: 13px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: none;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.btn-deselect:hover {
+  background: #fee2e2;
+  color: var(--danger);
+}
+
+.btn-ghost {
+  background: none;
+  color: var(--text-muted);
+  border-color: var(--border);
+}
+
+.btn-ghost:hover {
+  background: var(--bg);
+  color: var(--text);
+}
+
 /* ===== Category cards ===== */
 .category-card {
   background: var(--surface);
@@ -142,13 +184,25 @@ body {
   align-items: center;
   justify-content: space-between;
   padding: 12px 16px;
-  cursor: pointer;
   user-select: none;
   transition: background 0.1s;
+  background: var(--bg);
 }
 
-.category-header:hover {
+.category-card .category-header:hover {
+  background: #eef0f5;
+}
+
+.category-card.selected .category-header {
+  background: var(--surface);
+}
+
+.category-card.selected .category-header-left:hover {
   background: var(--accent);
+}
+
+.category-card.selected {
+  border-left: 3px solid var(--primary);
 }
 
 .category-header-left {
@@ -606,6 +660,58 @@ body {
 .sub-options-hint {
   font-size: 11px;
   color: var(--text-muted);
+}
+
+/* ===== Option items (settings select type) ===== */
+.options-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  min-height: 36px;
+}
+
+.option-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+}
+
+.option-item.dragging { opacity: 0.4; }
+.option-item.drag-over { border-color: var(--primary); background: var(--accent); }
+
+.option-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 13px;
+  font-family: inherit;
+  background: transparent;
+  padding: 2px 4px;
+}
+
+.option-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 15px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  line-height: 1;
+}
+
+.option-delete-btn:hover {
+  color: var(--danger);
+  background: #fee2e2;
 }
 
 /* Sticky footer in settings */
