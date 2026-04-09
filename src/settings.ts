@@ -2,7 +2,7 @@ import './style.css';
 import type { Category, SubItem } from './types';
 import { getSettings, saveSettings, exportBackup, importBackup } from './storage';
 import type { BackupData } from './storage';
-import { generateId } from './utils';
+import { generateId, EMAIL_DOMAIN } from './utils';
 
 // ===== State =====
 let categories: Category[] = [];
@@ -241,9 +241,9 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   const fields = document.createElement('div');
   fields.className = 'sub-item-fields';
 
-  // Label + type row
-  const row1 = document.createElement('div');
-  row1.className = 'sub-item-row';
+  // Row 1: ラベル + 削除ボタン（右端）
+  const labelRow = document.createElement('div');
+  labelRow.className = 'sub-item-label-row';
 
   const labelInput = document.createElement('input');
   labelInput.type = 'text';
@@ -254,6 +254,23 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
     subItem.label = labelInput.value;
     markDirty();
   });
+
+  const delBtn = document.createElement('button');
+  delBtn.className = 'btn btn-danger btn-sm';
+  delBtn.textContent = '削除';
+  delBtn.addEventListener('click', () => {
+    cat.subItems.splice(subIndex, 1);
+    markDirty();
+    renderCatList();
+  });
+
+  labelRow.appendChild(labelInput);
+  labelRow.appendChild(delBtn);
+  fields.appendChild(labelRow);
+
+  // Row 2: タイプ選択 + オプション
+  const typeRow = document.createElement('div');
+  typeRow.className = 'sub-item-type-row';
 
   const typeSelect = document.createElement('select');
   typeSelect.className = 'sub-type-select';
@@ -269,31 +286,15 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   typeSelect.addEventListener('change', () => {
     subItem.type = typeSelect.value as 'select' | 'text';
     markDirty();
-    // Re-render to show/hide options field
     renderCatList();
   });
-
-  const delBtn = document.createElement('button');
-  delBtn.className = 'btn btn-danger btn-sm';
-  delBtn.textContent = '削除';
-  delBtn.addEventListener('click', () => {
-    cat.subItems.splice(subIndex, 1);
-    markDirty();
-    renderCatList();
-  });
-
-  row1.appendChild(labelInput);
-  row1.appendChild(typeSelect);
-  row1.appendChild(delBtn);
-  fields.appendChild(row1);
+  typeRow.appendChild(typeSelect);
 
   // useOfficeMaster toggle (only for text type)
   if (subItem.type === 'text') {
-    const officeMasterRow = document.createElement('div');
-    officeMasterRow.className = 'sub-item-row';
-
     const officeMasterCb = document.createElement('input');
     officeMasterCb.type = 'checkbox';
+    officeMasterCb.id = `om-${subItem.id}`;
     officeMasterCb.checked = subItem.useOfficeMaster ?? false;
     officeMasterCb.addEventListener('change', () => {
       subItem.useOfficeMaster = officeMasterCb.checked;
@@ -301,14 +302,15 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
     });
 
     const officeMasterLabel = document.createElement('label');
-    officeMasterLabel.textContent = '事務所マスターを使用';
-    officeMasterLabel.style.fontSize = '12px';
-    officeMasterLabel.style.color = 'var(--text-muted)';
-    officeMasterLabel.prepend(officeMasterCb);
+    officeMasterLabel.htmlFor = `om-${subItem.id}`;
+    officeMasterLabel.textContent = '事務所マスター';
+    officeMasterLabel.className = 'office-master-toggle-label';
 
-    officeMasterRow.appendChild(officeMasterLabel);
-    fields.appendChild(officeMasterRow);
+    typeRow.appendChild(officeMasterCb);
+    typeRow.appendChild(officeMasterLabel);
   }
+
+  fields.appendChild(typeRow);
 
   // Options list (only for select type)
   if (subItem.type === 'select') {
@@ -455,7 +457,7 @@ function renderEmailList(): void {
     input.type = 'text';
     input.className = 'email-master-input';
     input.value = email;
-    input.placeholder = 'メールアドレスを入力';
+    input.placeholder = '例: yamada-taro';
     input.addEventListener('input', () => {
       emailList[index] = input.value;
       markDirty();
@@ -470,7 +472,12 @@ function renderEmailList(): void {
       renderEmailList();
     });
 
+    const domainLabel = document.createElement('span');
+    domainLabel.className = 'email-domain-label';
+    domainLabel.textContent = EMAIL_DOMAIN;
+
     row.appendChild(input);
+    row.appendChild(domainLabel);
     row.appendChild(delBtn);
     container.appendChild(row);
   });
@@ -566,6 +573,15 @@ function init(): void {
   renderEmailList();
   renderOfficeList();
   renderCatList();
+
+  // ===== 項目の設計 編集トグル =====
+  const editDesignBtn = document.getElementById('editDesignBtn')!;
+  const designEditArea = document.getElementById('designEditArea')!;
+  editDesignBtn.addEventListener('click', () => {
+    const isOpen = designEditArea.style.display !== 'none';
+    designEditArea.style.display = isOpen ? 'none' : 'block';
+    editDesignBtn.textContent = isOpen ? '編集' : '完了';
+  });
 
   document.getElementById('addEmailBtn')!.addEventListener('click', () => {
     emailList.push('');

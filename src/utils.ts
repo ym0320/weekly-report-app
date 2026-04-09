@@ -1,5 +1,12 @@
 import type { Category, CategoryEntry } from './types';
 
+export const EMAIL_DOMAIN = '@tkc.ne.jp';
+
+/** メールプレフィックスからフルアドレスに変換 */
+export function toFullEmail(prefix: string): string {
+  return prefix.trim() ? prefix.trim() + EMAIL_DOMAIN : '';
+}
+
 export function generateCategoryOutput(
   category: Category,
   allEntries: CategoryEntry[],
@@ -22,7 +29,15 @@ export function generateCategoryOutput(
     } else if (subItem.label.includes('●')) {
       lines.push(subItem.label.replace('●', value));
     } else {
-      lines.push(`${subItem.label}: ${value}`);
+      // (n) プレフィックスがある場合は2行形式: ラベル行 + インデントした値行
+      const prefixMatch = subItem.label.match(/^\(\d+\) /);
+      if (prefixMatch) {
+        const indent = ' '.repeat(prefixMatch[0].length);
+        lines.push(subItem.label);
+        lines.push(indent + value);
+      } else {
+        lines.push(`${subItem.label}: ${value}`);
+      }
     }
   }
   return lines.join('\n');

@@ -17,6 +17,11 @@
   padding: 0;
 }
 
+/* iOS自動ズーム防止: input/select/textareaのfont-sizeは16px以上 */
+input, select, textarea {
+  font-size: 16px;
+}
+
 body {
   font-family: system-ui, -apple-system, sans-serif;
   background: var(--bg);
@@ -242,11 +247,12 @@ body {
 .category-body {
   max-height: 0;
   overflow: hidden;
-  transition: max-height 0.25s ease;
+  transition: max-height 0.3s ease-out;
+  will-change: max-height;
 }
 
 .category-card.open .category-body {
-  max-height: 2000px;
+  max-height: 3000px;
 }
 
 .category-body-inner {
@@ -484,6 +490,23 @@ body {
   color: var(--text);
 }
 
+.section-header-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.section-header-row h2 {
+  margin-bottom: 0;
+}
+
+.email-domain-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .backup-hint {
   font-size: 13px;
   color: var(--text-muted);
@@ -632,6 +655,29 @@ body {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+}
+
+/* サブ項目: ラベル + 削除ボタン（1行目） */
+.sub-item-label-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+/* サブ項目: タイプ選択 + オプション（2行目） */
+.sub-item-type-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.office-master-toggle-label {
+  font-size: 12px;
+  color: var(--text-muted);
+  cursor: pointer;
+  user-select: none;
 }
 
 .sub-label-input {

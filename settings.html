@@ -12,6 +12,11 @@
       <a href="/index.html" class="btn btn-secondary btn-icon">← 戻る</a>
       <h1>設定</h1>
     </div>
+    <div class="header-actions">
+      <button id="exportBtn" class="btn btn-secondary btn-sm" title="データをエクスポート（バックアップ）">↓ 切り出し</button>
+      <button id="importBtn" class="btn btn-secondary btn-sm" title="データをインポート（復元）">↑ 読み込み</button>
+      <input type="file" id="importInput" accept=".json" style="display:none" />
+    </div>
   </header>
 
   <main class="main-content" id="mainContent">
@@ -36,22 +41,16 @@
       </div>
     </div>
 
-    <!-- データ管理 -->
+    <!-- 項目の設計 -->
     <div class="settings-section">
-      <h2>データ管理</h2>
-      <p class="backup-hint">設定・履歴・入力中のデータをすべてバックアップします。別の端末への移行にも使用できます。</p>
-      <div class="backup-actions">
-        <button id="exportBtn" class="btn btn-secondary">↓ エクスポート</button>
-        <button id="importBtn" class="btn btn-secondary">↑ インポート</button>
-        <input type="file" id="importInput" accept=".json" style="display:none" />
+      <div class="section-header-row">
+        <h2>項目の設計</h2>
+        <button id="editDesignBtn" class="btn btn-secondary btn-sm">編集</button>
       </div>
-    </div>
-
-    <!-- 大項目の管理 -->
-    <div class="settings-section">
-      <h2>大項目の管理</h2>
-      <div id="catList" class="cat-list"></div>
-      <button id="addCatBtn" class="btn btn-secondary" style="margin-top:12px;">+ 大項目追加</button>
+      <div id="designEditArea" style="display:none; margin-top:14px;">
+        <div id="catList" class="cat-list"></div>
+        <button id="addCatBtn" class="btn btn-secondary" style="margin-top:12px;">+ 大項目追加</button>
+      </div>
     </div>
   </main>
 

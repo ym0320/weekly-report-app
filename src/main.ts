@@ -8,7 +8,7 @@ import {
   getSelectedCategoryIds,
   saveSelectedCategoryIds,
 } from './storage';
-import { generateCategoryOutput, generateId } from './utils';
+import { generateCategoryOutput, generateId, toFullEmail } from './utils';
 
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
@@ -125,7 +125,9 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'field-group';
 
-  const value = getSubItemValue(category.id, subItem.id);
+  // defaultValue: 未入力時はデフォルト値を使用（特記事項など）
+  const storedValue = getSubItemValue(category.id, subItem.id);
+  const value = storedValue !== '' ? storedValue : (subItem.defaultValue ?? '');
 
   if (subItem.type === 'select') {
     if (subItem.label) {
@@ -228,9 +230,11 @@ function renderBodyInner(category: Category): HTMLElement {
     // subItemId: '__email_selection__', value: JSON.stringify(string[])
     const emailEntry = currentEntries.find((e) => e.categoryId === category.id);
     const selectionEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+    // emailListはプレフィックスのみ保存。表示・コピーはフルアドレスを使う
+    const fullEmailList = emailList.map(toFullEmail).filter(Boolean);
     let selectedEmails: string[] = selectionEntry
       ? JSON.parse(selectionEntry.value || '[]')
-      : [...emailList]; // デフォルト: 全選択
+      : [...fullEmailList]; // デフォルト: 全選択
 
     // 選択を保存する関数
     const saveSelection = () => {
@@ -238,18 +242,18 @@ function renderBodyInner(category: Category): HTMLElement {
     };
 
     // 初回: デフォルトを保存
-    if (!selectionEntry && emailList.length > 0) {
+    if (!selectionEntry && fullEmailList.length > 0) {
       saveSelection();
     }
 
-    if (emailList.length === 0) {
+    if (fullEmailList.length === 0) {
       const hint = document.createElement('p');
       hint.className = 'email-empty-hint';
       hint.textContent = '設定でメールアドレスを登録してください';
       bodyInner.appendChild(hint);
     } else {
       // 各メールをトグル可能な行として表示
-      emailList.forEach((email) => {
+      fullEmailList.forEach((email) => {
         const isSelected = selectedEmails.includes(email);
         const row = document.createElement('div');
         row.className = `email-row ${isSelected ? 'email-row-on' : 'email-row-off'}`;
@@ -420,7 +424,10 @@ function renderActiveCard(category: Category): HTMLElement {
 
   headerRight.appendChild(copyBtn);
   headerRight.appendChild(resetBtn);
-  headerRight.appendChild(deselectBtn);
+  // メールカテゴリは必須なので✕（選択解除）ボタンを非表示
+  if (!category.isEmail) {
+    headerRight.appendChild(deselectBtn);
+  }
   header.appendChild(headerLeft);
   header.appendChild(headerRight);
 
@@ -567,6 +574,13 @@ function init(): void {
   // Restore state
   currentEntries = getCurrentEntries();
   selectedCategoryIds = new Set(getSelectedCategoryIds());
+
+  // メールカテゴリは常に選択状態にする
+  const settings = getSettings();
+  for (const cat of settings.categories) {
+    if (cat.isEmail) selectedCategoryIds.add(cat.id);
+  }
+  saveSelectedCategoryIds(Array.from(selectedCategoryIds));
 
   renderCategories();
 

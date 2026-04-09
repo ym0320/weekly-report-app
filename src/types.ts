@@ -4,6 +4,7 @@ export interface SubItem {
   type: 'select' | 'text';
   options: string[];   // select型の選択肢
   useOfficeMaster?: boolean; // trueの場合、事務所マスターから検索・選択
+  defaultValue?: string;    // テキスト入力のデフォルト値（未入力時に表示）
 }
 
 export interface Category {
