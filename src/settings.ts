@@ -445,6 +445,53 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   return item;
 }
 
+// ===== Drag helpers for simple lists =====
+function setupListDragAndDrop(
+  item: HTMLElement,
+  index: number,
+  list: unknown[],
+  container: HTMLElement,
+  rerender: () => void
+): void {
+  item.setAttribute('draggable', 'true');
+  item.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    item.classList.add('dragging');
+    (e.dataTransfer as DataTransfer).effectAllowed = 'move';
+  });
+  item.addEventListener('dragend', (e) => {
+    e.stopPropagation();
+    item.classList.remove('dragging');
+    container.querySelectorAll('.dragging, .drag-over').forEach((el) => {
+      el.classList.remove('dragging', 'drag-over');
+    });
+  });
+  item.addEventListener('dragover', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    item.classList.add('drag-over');
+  });
+  item.addEventListener('dragleave', (e) => {
+    e.stopPropagation();
+    item.classList.remove('drag-over');
+  });
+  item.addEventListener('drop', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    item.classList.remove('drag-over');
+    // dragSrcIndex is captured per-item at render time; use dataset for cross-item communication
+    const srcIdx = Number(container.dataset.dragSrc);
+    if (isNaN(srcIdx) || srcIdx === index) return;
+    const moved = list.splice(srcIdx, 1)[0];
+    list.splice(index, 0, moved);
+    markDirty();
+    rerender();
+  });
+  item.addEventListener('dragstart', () => {
+    container.dataset.dragSrc = String(index);
+  });
+}
+
 // ===== Render email list =====
 function renderEmailList(): void {
   const container = document.getElementById('emailListContainer')!;
@@ -452,6 +499,11 @@ function renderEmailList(): void {
   emailList.forEach((email, index) => {
     const row = document.createElement('div');
     row.className = 'email-master-row';
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '≡';
+    handle.title = 'ドラッグして並べ替え';
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -463,6 +515,10 @@ function renderEmailList(): void {
       markDirty();
     });
 
+    const domainLabel = document.createElement('span');
+    domainLabel.className = 'email-domain-label';
+    domainLabel.textContent = EMAIL_DOMAIN;
+
     const delBtn = document.createElement('button');
     delBtn.className = 'btn btn-danger btn-sm';
     delBtn.textContent = '削除';
@@ -472,14 +528,13 @@ function renderEmailList(): void {
       renderEmailList();
     });
 
-    const domainLabel = document.createElement('span');
-    domainLabel.className = 'email-domain-label';
-    domainLabel.textContent = EMAIL_DOMAIN;
-
+    row.appendChild(handle);
     row.appendChild(input);
     row.appendChild(domainLabel);
     row.appendChild(delBtn);
     container.appendChild(row);
+
+    setupListDragAndDrop(row, index, emailList, container, renderEmailList);
   });
 }
 
@@ -490,6 +545,11 @@ function renderOfficeList(): void {
   offices.forEach((office, index) => {
     const row = document.createElement('div');
     row.className = 'office-master-row';
+
+    const handle = document.createElement('span');
+    handle.className = 'drag-handle';
+    handle.textContent = '≡';
+    handle.title = 'ドラッグして並べ替え';
 
     const input = document.createElement('input');
     input.type = 'text';
@@ -510,9 +570,12 @@ function renderOfficeList(): void {
       renderOfficeList();
     });
 
+    row.appendChild(handle);
     row.appendChild(input);
     row.appendChild(delBtn);
     container.appendChild(row);
+
+    setupListDragAndDrop(row, index, offices, container, renderOfficeList);
   });
 }
 
@@ -583,17 +646,35 @@ function init(): void {
     editDesignBtn.textContent = isOpen ? '編集' : '完了';
   });
 
-  document.getElementById('addEmailBtn')!.addEventListener('click', () => {
-    emailList.push('');
+  const newEmailInput = document.getElementById('newEmailInput') as HTMLInputElement;
+  const addEmailBtn = document.getElementById('addEmailBtn')!;
+  const doAddEmail = () => {
+    const prefix = newEmailInput.value.trim();
+    if (!prefix) { showToast('メールアドレスを入力してください', 'error'); return; }
+    if (emailList.includes(prefix)) { showToast('すでに登録されています', 'error'); return; }
+    emailList.push(prefix);
     markDirty();
     renderEmailList();
-  });
+    newEmailInput.value = '';
+    newEmailInput.focus();
+  };
+  addEmailBtn.addEventListener('click', doAddEmail);
+  newEmailInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAddEmail(); });
 
-  document.getElementById('addOfficeBtn')!.addEventListener('click', () => {
-    offices.push('');
+  const newOfficeInput = document.getElementById('newOfficeInput') as HTMLInputElement;
+  const addOfficeBtn = document.getElementById('addOfficeBtn')!;
+  const doAddOffice = () => {
+    const name = newOfficeInput.value.trim();
+    if (!name) { showToast('事務所名を入力してください', 'error'); return; }
+    if (offices.includes(name)) { showToast('すでに登録されています', 'error'); return; }
+    offices.push(name);
     markDirty();
     renderOfficeList();
-  });
+    newOfficeInput.value = '';
+    newOfficeInput.focus();
+  };
+  addOfficeBtn.addEventListener('click', doAddOffice);
+  newOfficeInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') doAddOffice(); });
 
   document.getElementById('addCatBtn')!.addEventListener('click', () => {
     categories.push({

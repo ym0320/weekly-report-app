@@ -29,7 +29,11 @@
         <label class="field-label">報告先メールアドレス</label>
         <p class="email-hint">メールアドレスを1件ずつ登録します。メイン画面で個別にON/OFFできます。</p>
         <div id="emailListContainer" class="email-master-list"></div>
-        <button id="addEmailBtn" class="btn btn-secondary btn-sm" style="margin-top:8px;">＋ メールアドレスを追加</button>
+        <div class="email-add-row">
+          <input type="text" id="newEmailInput" class="email-master-input" placeholder="例: yamada-taro" />
+          <span class="email-domain-label">@tkc.ne.jp</span>
+          <button id="addEmailBtn" class="btn btn-primary btn-sm">追加</button>
+        </div>
       </div>
 
       <!-- 事務所マスター -->
@@ -37,7 +41,10 @@
         <label class="field-label">事務所マスター</label>
         <p class="email-hint">登録した事務所名は「会員事務所名」フィールドで検索・選択できます。</p>
         <div id="officeListContainer" class="office-master-list"></div>
-        <button id="addOfficeBtn" class="btn btn-secondary btn-sm" style="margin-top:8px;">＋ 事務所を追加</button>
+        <div class="office-add-row">
+          <input type="text" id="newOfficeInput" class="office-master-input" placeholder="事務所名を入力" />
+          <button id="addOfficeBtn" class="btn btn-primary btn-sm">追加</button>
+        </div>
       </div>
     </div>
 
