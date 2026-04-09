@@ -168,6 +168,36 @@ function renderBodyInner(category: Category, emailAddresses: string): HTMLElemen
   return bodyInner;
 }
 
+// ===== Confirm dialog =====
+function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal')!;
+    const msgEl = document.getElementById('confirmMessage')!;
+    const cancelBtn = document.getElementById('confirmCancelBtn')!;
+    const okBtn = document.getElementById('confirmOkBtn')!;
+
+    msgEl.textContent = message;
+    okBtn.textContent = okLabel;
+    modal.classList.add('active');
+
+    const close = (result: boolean) => {
+      modal.classList.remove('active');
+      cancelBtn.removeEventListener('click', onCancel);
+      okBtn.removeEventListener('click', onOk);
+      modal.removeEventListener('click', onOverlay);
+      resolve(result);
+    };
+
+    const onCancel = () => close(false);
+    const onOk = () => close(true);
+    const onOverlay = (e: MouseEvent) => { if (e.target === modal) close(false); };
+
+    cancelBtn.addEventListener('click', onCancel);
+    okBtn.addEventListener('click', onOk);
+    modal.addEventListener('click', onOverlay);
+  });
+}
+
 // ===== Render inactive card =====
 function renderInactiveCard(category: Category): HTMLElement {
   const card = document.createElement('div');
@@ -207,13 +237,15 @@ function renderInactiveCard(category: Category): HTMLElement {
     card.replaceWith(activeCard);
   };
 
-  header.addEventListener('click', (e) => {
+  header.addEventListener('click', async (e) => {
     if (e.target === addBtn) return;
-    activate();
+    const ok = await showConfirm(`「${category.name}」を今週使用しますか？`, '使用する');
+    if (ok) activate();
   });
-  addBtn.addEventListener('click', (e) => {
+  addBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    activate();
+    const ok = await showConfirm(`「${category.name}」を今週使用しますか？`, '使用する');
+    if (ok) activate();
   });
 
   return card;
@@ -305,12 +337,12 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
   });
 
   // Reset button (category-level)
-  resetBtn.addEventListener('click', (e) => {
+  resetBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
-    // Remove this category's entry from currentEntries
+    const ok = await showConfirm(`「${category.name}」の入力内容をリセットしますか？`, 'リセット');
+    if (!ok) return;
     currentEntries = currentEntries.filter((en) => en.categoryId !== category.id);
     saveCurrentEntries(currentEntries);
-    // Re-render body inner
     const newBodyInner = renderBodyInner(category, emailAddresses);
     body.replaceChild(newBodyInner, bodyInner);
     bodyInner = newBodyInner;
@@ -318,8 +350,10 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
   });
 
   // Deselect button
-  deselectBtn.addEventListener('click', (e) => {
+  deselectBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
+    const ok = await showConfirm(`「${category.name}」を選択から外しますか？`, '外す');
+    if (!ok) return;
     selectedCategoryIds.delete(category.id);
     saveSelectedCategoryIds(Array.from(selectedCategoryIds));
     const inactiveCard = renderInactiveCard(category);

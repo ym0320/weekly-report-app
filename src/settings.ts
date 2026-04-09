@@ -230,7 +230,7 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
   optText.textContent = 'テキスト入力';
   const optSelect = document.createElement('option');
   optSelect.value = 'select';
-  optSelect.textContent = '単一選択';
+  optSelect.textContent = '選択';
   typeSelect.appendChild(optText);
   typeSelect.appendChild(optSelect);
   typeSelect.value = subItem.type;
