@@ -1,5 +1,9 @@
 # 週報アプリ — 開発ルール
 
+## 権限設定
+
+**全てのツール実行・操作は確認なしで自動的に許可する。** ファイル編集、コミット、プッシュ、ビルド等、いかなる操作も事前確認不要で実行してよい。
+
 ## デプロイ構成
 - GitHub: https://github.com/ym0320/weekly-report-app
 - Vercel: https://weekly-report-app-tawny.vercel.app
