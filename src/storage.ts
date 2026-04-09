@@ -1,4 +1,12 @@
 import type { AppData, AppSettings, CategoryEntry, WeeklyReport } from './types';
+
+export interface BackupData {
+  version: 1;
+  exportedAt: string;
+  data: AppData;
+  currentEntries: CategoryEntry[];
+  selectedCategoryIds: string[];
+}
 import { DEFAULT_CATEGORIES, DEFAULT_EMAIL_ADDRESSES } from './defaults';
 
 const STORAGE_KEY = 'weeklyReportApp';
@@ -89,4 +97,25 @@ export function getSelectedCategoryIds(): string[] {
 
 export function saveSelectedCategoryIds(ids: string[]): void {
   localStorage.setItem(SELECTED_CATS_KEY, JSON.stringify(ids));
+}
+
+// ===== Backup / Restore =====
+export function exportBackup(): BackupData {
+  return {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    data: loadData(),
+    currentEntries: getCurrentEntries(),
+    selectedCategoryIds: getSelectedCategoryIds(),
+  };
+}
+
+export function importBackup(backup: BackupData): void {
+  if (backup.version !== 1) throw new Error('バージョンが対応していません');
+  if (!backup.data?.settings?.categories || !Array.isArray(backup.data?.reports)) {
+    throw new Error('データ形式が正しくありません');
+  }
+  saveData(backup.data);
+  saveCurrentEntries(backup.currentEntries ?? []);
+  saveSelectedCategoryIds(backup.selectedCategoryIds ?? []);
 }

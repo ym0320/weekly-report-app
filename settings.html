@@ -30,6 +30,17 @@
       </div>
     </div>
 
+    <!-- データ管理 -->
+    <div class="settings-section">
+      <h2>データ管理</h2>
+      <p class="backup-hint">設定・履歴・入力中のデータをすべてバックアップします。別の端末への移行にも使用できます。</p>
+      <div class="backup-actions">
+        <button id="exportBtn" class="btn btn-secondary">↓ エクスポート</button>
+        <button id="importBtn" class="btn btn-secondary">↑ インポート</button>
+        <input type="file" id="importInput" accept=".json" style="display:none" />
+      </div>
+    </div>
+
     <!-- 大項目の管理 -->
     <div class="settings-section">
       <h2>大項目の管理</h2>
@@ -40,6 +51,17 @@
 
   <div class="sticky-footer">
     <button id="saveSettingsBtn" class="btn btn-primary">設定を保存</button>
+  </div>
+
+  <!-- Confirm modal -->
+  <div id="confirmModal" class="modal-overlay">
+    <div class="modal">
+      <p id="confirmMessage" class="confirm-message"></p>
+      <div class="modal-actions">
+        <button id="confirmCancelBtn" class="btn btn-secondary">キャンセル</button>
+        <button id="confirmOkBtn" class="btn btn-primary">確認</button>
+      </div>
+    </div>
   </div>
 
   <div id="toastContainer" class="toast-container"></div>

@@ -366,7 +366,7 @@ body {
   z-index: 500;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s;
+  transition: opacity 0.15s ease;
 }
 
 .modal-overlay.active {
@@ -380,12 +380,14 @@ body {
   padding: 24px;
   width: 320px;
   box-shadow: 0 8px 32px rgba(0,0,0,0.15);
-  transform: scale(0.95);
-  transition: transform 0.2s;
+  transform: translateY(-6px);
+  opacity: 0;
+  transition: transform 0.15s ease, opacity 0.15s ease;
 }
 
 .modal-overlay.active .modal {
-  transform: scale(1);
+  transform: translateY(0);
+  opacity: 1;
 }
 
 .modal h2 {
@@ -480,6 +482,19 @@ body {
   font-weight: 600;
   margin-bottom: 16px;
   color: var(--text);
+}
+
+.backup-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+
+.backup-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .email-input {

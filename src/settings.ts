@@ -1,6 +1,7 @@
 import './style.css';
 import type { Category, SubItem } from './types';
-import { getSettings, saveSettings } from './storage';
+import { getSettings, saveSettings, exportBackup, importBackup } from './storage';
+import type { BackupData } from './storage';
 import { generateId } from './utils';
 
 // ===== State =====
@@ -24,6 +25,36 @@ function showToast(message: string, type: 'success' | 'error' | 'info' = 'info')
 
 function markDirty(): void {
   isDirty = true;
+}
+
+// ===== Confirm dialog =====
+function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirmModal')!;
+    const msgEl = document.getElementById('confirmMessage')!;
+    const cancelBtn = document.getElementById('confirmCancelBtn')!;
+    const okBtn = document.getElementById('confirmOkBtn')!;
+
+    msgEl.textContent = message;
+    okBtn.textContent = okLabel;
+    modal.classList.add('active');
+
+    const close = (result: boolean) => {
+      modal.classList.remove('active');
+      cancelBtn.removeEventListener('click', onCancel);
+      okBtn.removeEventListener('click', onOk);
+      modal.removeEventListener('click', onOverlay);
+      resolve(result);
+    };
+
+    const onCancel = () => close(false);
+    const onOk = () => close(true);
+    const onOverlay = (e: MouseEvent) => { if (e.target === modal) close(false); };
+
+    cancelBtn.addEventListener('click', onCancel);
+    okBtn.addEventListener('click', onOk);
+    modal.addEventListener('click', onOverlay);
+  });
 }
 
 // ===== Drag and Drop for categories =====
@@ -459,6 +490,50 @@ function init(): void {
   });
 
   document.getElementById('saveSettingsBtn')!.addEventListener('click', doSaveSettings);
+
+  // ===== Export =====
+  document.getElementById('exportBtn')!.addEventListener('click', () => {
+    const backup = exportBackup();
+    const json = JSON.stringify(backup, null, 2);
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const date = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    a.href = url;
+    a.download = `週報バックアップ_${date}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showToast('エクスポートしました', 'success');
+  });
+
+  // ===== Import =====
+  document.getElementById('importBtn')!.addEventListener('click', () => {
+    document.getElementById('importInput')!.click();
+  });
+
+  document.getElementById('importInput')!.addEventListener('change', async (e) => {
+    const file = (e.target as HTMLInputElement).files?.[0];
+    if (!file) return;
+
+    const ok = await showConfirm(
+      '現在のすべてのデータ（設定・履歴・入力中データ）が上書きされます。インポートしますか？',
+      'インポート'
+    );
+    (e.target as HTMLInputElement).value = '';
+    if (!ok) return;
+
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text) as BackupData;
+      importBackup(backup);
+      showToast('インポート完了。ページを再読み込みします...', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } catch {
+      showToast('インポートに失敗しました。ファイル形式を確認してください', 'error');
+    }
+  });
 
   window.addEventListener('beforeunload', beforeUnloadHandler);
 }

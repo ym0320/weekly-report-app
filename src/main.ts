@@ -237,15 +237,13 @@ function renderInactiveCard(category: Category): HTMLElement {
     card.replaceWith(activeCard);
   };
 
-  header.addEventListener('click', async (e) => {
+  header.addEventListener('click', (e) => {
     if (e.target === addBtn) return;
-    const ok = await showConfirm(`「${category.name}」を今週使用しますか？`, '使用する');
-    if (ok) activate();
+    activate();
   });
-  addBtn.addEventListener('click', async (e) => {
+  addBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    const ok = await showConfirm(`「${category.name}」を今週使用しますか？`, '使用する');
-    if (ok) activate();
+    activate();
   });
 
   return card;
@@ -318,7 +316,7 @@ function renderActiveCard(category: Category, emailAddresses: string): HTMLEleme
     e.stopPropagation();
     const output = generateCategoryOutput(category, currentEntries, emailAddresses);
     if (!output.trim()) {
-      showToast('入力がありません', 'error');
+      showToast(`「${category.name}」に入力がありません`, 'error');
       return;
     }
     navigator.clipboard.writeText(output).then(() => {
