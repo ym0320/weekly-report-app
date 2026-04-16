@@ -321,6 +321,31 @@ function renderSettingsSubItem(cat: Category, subItem: SubItem, subIndex: number
     fields.appendChild(addOptBtn);
   }
 
+  // テキスト型: デフォルト値（作成画面で初期表示）
+  if (subItem.type === 'text' && !subItem.useOfficeMaster) {
+    const dvGroup = document.createElement('div');
+    dvGroup.className = 'field-group';
+    dvGroup.style.marginTop = '8px';
+
+    const dvLabel = document.createElement('label');
+    dvLabel.className = 'field-label';
+    dvLabel.textContent = 'デフォルト値（作成画面で初期表示）';
+    dvGroup.appendChild(dvLabel);
+
+    const dvTextarea = document.createElement('textarea');
+    dvTextarea.className = 'field-textarea';
+    dvTextarea.value = subItem.defaultValue ?? '';
+    dvTextarea.placeholder = '毎回使い回すテキストを入力（空欄可）';
+    dvTextarea.rows = 3;
+    dvTextarea.addEventListener('input', () => {
+      subItem.defaultValue = dvTextarea.value || undefined;
+      markDirty();
+    });
+    dvGroup.appendChild(dvTextarea);
+
+    fields.appendChild(dvGroup);
+  }
+
   item.appendChild(fields);
   setupSubDragAndDrop(item, cat.id, subIndex);
 

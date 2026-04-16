@@ -9,9 +9,9 @@ let currentPage: PageId | null = null;
 let getSettingsDirty: (() => boolean) | null = null;
 
 const pageTitles: Record<PageId, string> = {
-  main: '週報',
-  settings: '設定 — 週報',
-  history: '履歴 — 週報',
+  main: 'SCG週報',
+  settings: '設定 — SCG週報',
+  history: '履歴 — SCG週報',
 };
 
 // ===== Shared confirm (navigation guard) =====
