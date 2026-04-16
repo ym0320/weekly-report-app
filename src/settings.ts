@@ -409,7 +409,27 @@ function renderSettingsCatItem(cat: Category, index: number): HTMLElement {
   const body = document.createElement('div');
   body.className = 'cat-item-body';
 
-  if (!cat.isEmail) {
+  const isTokki = cat.name === '特記事項' && cat.subItems.length === 1 && cat.subItems[0].type === 'text' && cat.subItems[0].label === '';
+
+  if (isTokki) {
+    // 特記事項: デフォルト値テキストのみ
+    const subItem = cat.subItems[0];
+    const dvLabel = document.createElement('label');
+    dvLabel.className = 'field-label';
+    dvLabel.textContent = 'デフォルト値（作成画面で初期表示されるテキスト）';
+    body.appendChild(dvLabel);
+
+    const dvTextarea = document.createElement('textarea');
+    dvTextarea.className = 'field-textarea';
+    dvTextarea.value = subItem.defaultValue ?? '';
+    dvTextarea.placeholder = '毎回使い回すテキストを入力（空欄可）';
+    dvTextarea.rows = 4;
+    dvTextarea.addEventListener('input', () => {
+      subItem.defaultValue = dvTextarea.value || undefined;
+      markDirty();
+    });
+    body.appendChild(dvTextarea);
+  } else if (!cat.isEmail) {
     const subList = document.createElement('div');
     subList.className = 'sub-list';
 
