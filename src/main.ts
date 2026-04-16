@@ -75,7 +75,7 @@ function getSubItemValue(categoryId: string, subItemId: string): string {
   return entry?.subItemEntries.find((se) => se.subItemId === subItemId)?.value ?? '';
 }
 
-// ===== Office master combo (select + direct input) =====
+// ===== Office master (datalist combo) =====
 function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices: string[]): HTMLElement {
   const wrapper = document.createElement('div');
   wrapper.className = 'field-group';
@@ -87,49 +87,29 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
     wrapper.appendChild(lbl);
   }
 
-  const combo = document.createElement('div');
-  combo.className = 'office-combo';
+  const listId = `office-list-${subItem.id}`;
 
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'field-input';
-  input.placeholder = offices.length > 0 ? '事務所名を入力または選択...' : '事務所名を直接入力';
+  input.placeholder = '事務所名を入力または選択';
   input.value = getSubItemValue(category.id, subItem.id);
+  input.setAttribute('list', listId);
 
-  const dropdown = document.createElement('div');
-  dropdown.className = 'office-dropdown';
-  dropdown.style.display = 'none';
-
-  const showDropdown = (filter: string) => {
-    if (offices.length === 0) { dropdown.style.display = 'none'; return; }
-    dropdown.innerHTML = '';
-    const filtered = offices.filter((o) => o.includes(filter));
-    if (filtered.length === 0) { dropdown.style.display = 'none'; return; }
-    filtered.forEach((office) => {
-      const item = document.createElement('div');
-      item.className = 'office-dropdown-item';
-      item.textContent = office;
-      item.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        input.value = office;
-        setSubItemValue(category.id, subItem.id, office);
-        dropdown.style.display = 'none';
-      });
-      dropdown.appendChild(item);
-    });
-    dropdown.style.display = 'block';
-  };
+  const datalist = document.createElement('datalist');
+  datalist.id = listId;
+  for (const office of offices) {
+    const opt = document.createElement('option');
+    opt.value = office;
+    datalist.appendChild(opt);
+  }
 
   input.addEventListener('input', () => {
     setSubItemValue(category.id, subItem.id, input.value);
-    showDropdown(input.value);
   });
-  input.addEventListener('focus', () => showDropdown(input.value));
-  input.addEventListener('blur', () => setTimeout(() => { dropdown.style.display = 'none'; }, 150));
 
-  combo.appendChild(input);
-  combo.appendChild(dropdown);
-  wrapper.appendChild(combo);
+  wrapper.appendChild(input);
+  wrapper.appendChild(datalist);
   return wrapper;
 }
 
