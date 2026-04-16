@@ -55,6 +55,7 @@ function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
     cancelBtn.addEventListener('click', onCancel);
     okBtn.addEventListener('click', onOk);
     modal.addEventListener('click', onOverlay);
+    okBtn.focus();
   });
 }
 

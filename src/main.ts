@@ -345,6 +345,7 @@ function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
     cancelBtn.addEventListener('click', onCancel);
     okBtn.addEventListener('click', onOk);
     modal.addEventListener('click', onOverlay);
+    okBtn.focus();
   });
 }
 
@@ -677,8 +678,13 @@ export function initMain(): void {
     if (!ok) return;
     currentEntries = [];
     saveCurrentEntries(currentEntries);
+    // 日付を本日に戻す
+    const today = new Date();
+    currentReportDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    localStorage.setItem(DATE_STORAGE_KEY, currentReportDate);
+    (document.getElementById('mainDateInput') as HTMLInputElement).value = currentReportDate;
+    updateDateDisplay();
     renderCategories();
-    // 全カードを閉じる
     document.querySelectorAll('.category-card.open').forEach((el) => el.classList.remove('open'));
     showToast('すべてリセットしました', 'info');
   });

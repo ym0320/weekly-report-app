@@ -40,6 +40,7 @@ function showConfirm(message: string, okLabel: string): Promise<boolean> {
     cancelBtn.addEventListener('click', onCancel);
     okBtn.addEventListener('click', onOk);
     modal.addEventListener('click', onOverlay);
+    okBtn.focus();
   });
 }
 
