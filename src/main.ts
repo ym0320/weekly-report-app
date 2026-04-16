@@ -450,7 +450,7 @@ function renderBodyInner(category: Category): HTMLElement {
         sep.className = 'activity-separator';
 
         const sepLabel = document.createElement('span');
-        sepLabel.textContent = `(${actIdx + 1})`;
+        sepLabel.textContent = `${actIdx + 1}つ目の活動`;
         sep.appendChild(sepLabel);
 
         const delActBtn = document.createElement('button');
@@ -489,10 +489,16 @@ function renderBodyInner(category: Category): HTMLElement {
     addBtn.textContent = `${count + 1}つ目の活動を登録する`;
     addBtn.addEventListener('click', () => {
       activityCounts.set(category.id, count + 1);
+      // bodyのみ差し替え（スクロール維持）
       const card = document.querySelector(`[data-category-id="${category.id}"]`) as HTMLElement;
       if (card) {
-        const newCard = renderActiveCard(category);
-        card.replaceWith(newCard);
+        const body = card.querySelector('.category-body') as HTMLElement;
+        const newBodyInner = renderBodyInner(category);
+        const oldBodyInner = body.querySelector('.category-body-inner') as HTMLElement;
+        if (oldBodyInner) {
+          body.replaceChild(newBodyInner, oldBodyInner);
+        }
+        updateCardStatus(card, category);
       }
     });
     bodyInner.appendChild(addBtn);
