@@ -382,6 +382,26 @@ function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
   });
 }
 
+// ===== Category completion check =====
+function isCategoryComplete(category: Category): boolean {
+  if (category.isEmail) {
+    const entry = currentEntries.find((e) => e.categoryId === category.id);
+    const sel = entry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+    const selected: string[] = sel ? JSON.parse(sel.value || '[]') : [];
+    return selected.length > 0;
+  }
+  const entry = currentEntries.find((e) => e.categoryId === category.id);
+  if (!entry) return false;
+  return category.subItems.every((si) => {
+    const se = entry.subItemEntries.find((e) => e.subItemId === si.id);
+    return se && se.value.trim() !== '';
+  });
+}
+
+function updateCardStatus(card: HTMLElement, category: Category): void {
+  card.classList.toggle('complete', isCategoryComplete(category));
+}
+
 // ===== Render inactive card =====
 function renderInactiveCard(category: Category): HTMLElement {
   const card = document.createElement('div');
@@ -493,6 +513,11 @@ function renderActiveCard(category: Category): HTMLElement {
 
   card.appendChild(header);
   card.appendChild(body);
+
+  // 完了状態チェック（初期 + input/change イベントで動的更新）
+  updateCardStatus(card, category);
+  card.addEventListener('input', () => updateCardStatus(card, category));
+  card.addEventListener('change', () => updateCardStatus(card, category));
 
   headerLeft.addEventListener('click', () => {
     card.classList.toggle('open');
@@ -711,6 +736,13 @@ export function initMain(): void {
     if (!ok) return;
     currentEntries = [];
     saveCurrentEntries(currentEntries);
+    // 選択状態もクリア（メールカテゴリは維持）
+    const settings2 = getSettings();
+    selectedCategoryIds = new Set<string>();
+    for (const cat of settings2.categories) {
+      if (cat.isEmail) selectedCategoryIds.add(cat.id);
+    }
+    saveSelectedCategoryIds(Array.from(selectedCategoryIds));
     // 日付を本日に戻す
     const today = new Date();
     currentReportDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
@@ -718,7 +750,6 @@ export function initMain(): void {
     (document.getElementById('mainDateInput') as HTMLInputElement).value = currentReportDate;
     updateDateDisplay();
     renderCategories();
-    document.querySelectorAll('.category-card.open').forEach((el) => el.classList.remove('open'));
     showToast('すべてリセットしました', 'info');
   });
 
