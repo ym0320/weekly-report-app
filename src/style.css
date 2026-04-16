@@ -479,6 +479,35 @@ body {
   margin: 8px 0 4px;
 }
 
+/* ===== Forms link ===== */
+.forms-link-area {
+  margin-top: 28px;
+  display: flex;
+  justify-content: center;
+}
+
+.btn-forms {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 12px 28px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #7b2ff2, #2563eb);
+  border: none;
+  border-radius: 8px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: opacity 0.15s, box-shadow 0.15s;
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+.btn-forms:hover {
+  opacity: 0.9;
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.3);
+}
+
 /* ===== Main actions area ===== */
 .main-actions {
   margin-top: 24px;
