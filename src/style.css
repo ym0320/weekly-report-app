@@ -957,7 +957,7 @@ body {
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 8px;
   user-select: none;
 }
 
@@ -968,6 +968,7 @@ body {
 .history-date {
   font-size: 16px;
   font-weight: 600;
+  flex: 1;
 }
 
 .history-body {
@@ -991,6 +992,13 @@ body {
 
 .history-cat:last-child {
   margin-bottom: 0;
+}
+
+.history-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
 }
 
 .history-cat-name {

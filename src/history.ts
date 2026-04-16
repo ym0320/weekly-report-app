@@ -1,6 +1,7 @@
 import type { WeeklyReport } from './types';
 import { getReports, getSettings, deleteReport } from './storage';
-import { formatDate } from './utils';
+import { formatDate, generateCategoryOutput } from './utils';
+import type { CategoryEntry } from './types';
 
 // ===== State =====
 let allReports: WeeklyReport[] = [];
@@ -130,9 +131,9 @@ function renderHistory(): void {
       showToast('削除しました', 'info');
     });
 
+    header.appendChild(icon);
     header.appendChild(dateSpan);
     header.appendChild(delBtn);
-    header.appendChild(icon);
 
     const body = document.createElement('div');
     body.className = 'history-body';
@@ -150,10 +151,34 @@ function renderHistory(): void {
       const catDiv = document.createElement('div');
       catDiv.className = 'history-cat';
 
+      const catHeader = document.createElement('div');
+      catHeader.className = 'history-cat-header';
+
       const catName = document.createElement('div');
       catName.className = 'history-cat-name';
       catName.textContent = cat.name;
-      catDiv.appendChild(catName);
+
+      const copyCatBtn = document.createElement('button');
+      copyCatBtn.className = 'btn btn-secondary btn-sm';
+      copyCatBtn.textContent = 'コピー';
+      copyCatBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const entries: CategoryEntry[] = report.categoryEntries.map((ce) => ({
+          categoryId: ce.categoryId,
+          subItemEntries: ce.subItemEntries.map((se) => ({ subItemId: se.subItemId, value: se.value })),
+        }));
+        const output = generateCategoryOutput(cat, entries, '');
+        if (!output.trim()) { showToast('コピーする内容がありません', 'error'); return; }
+        navigator.clipboard.writeText(output).then(() => {
+          copyCatBtn.textContent = '✓';
+          showToast('コピーしました', 'success');
+          setTimeout(() => { copyCatBtn.textContent = 'コピー'; }, 2000);
+        }).catch(() => showToast('コピーに失敗しました', 'error'));
+      });
+
+      catHeader.appendChild(catName);
+      catHeader.appendChild(copyCatBtn);
+      catDiv.appendChild(catHeader);
 
       const entriesDiv = document.createElement('div');
       entriesDiv.className = 'history-entries';
