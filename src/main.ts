@@ -19,7 +19,6 @@ let currentReportDate: string = '';
 const DATE_STORAGE_KEY = 'weeklyReportApp_selectedDate';
 
 let mainInitialized = false;
-const askedMasterUpdate = new Set<string>();
 const activityCounts = new Map<string, number>();
 
 // ===== Multi-activity helpers =====
@@ -234,32 +233,6 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
   return wrapper;
 }
 
-// ===== Master update on blur =====
-function addMasterUpdateHandler(textarea: HTMLTextAreaElement, categoryId: string, subItem: SubItem): void {
-  if (!subItem.defaultValue) return;
-  const originalDefault = subItem.defaultValue;
-
-  textarea.addEventListener('blur', async () => {
-    const current = textarea.value.trim();
-    if (current === originalDefault || askedMasterUpdate.has(subItem.id)) return;
-    askedMasterUpdate.add(subItem.id);
-
-    const ok = await showConfirm('編集した内容をマスター（設定）にも反映しますか？', '反映する');
-    if (!ok) return;
-
-    const settings = getSettings();
-    for (const cat of settings.categories) {
-      if (cat.id !== categoryId) continue;
-      const si = cat.subItems.find((s) => s.id === subItem.id);
-      if (si) {
-        si.defaultValue = current || undefined;
-        saveSettings(settings);
-        showToast('マスターに反映しました', 'success');
-      }
-      break;
-    }
-  });
-}
 
 // ===== Render sub item =====
 function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
@@ -342,7 +315,7 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     textarea.addEventListener('input', () => {
       setSubItemValue(category.id, subItem.id, textarea.value);
     });
-    addMasterUpdateHandler(textarea, category.id, subItem);
+
     wrapper.appendChild(textarea);
 
   } else {
@@ -361,7 +334,7 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     textarea.addEventListener('input', () => {
       setSubItemValue(category.id, subItem.id, textarea.value);
     });
-    addMasterUpdateHandler(textarea, category.id, subItem);
+
     wrapper.appendChild(textarea);
   }
 
