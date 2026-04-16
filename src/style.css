@@ -436,16 +436,42 @@ body {
   margin: 8px 0 4px;
 }
 
-/* ===== Save button area ===== */
-.save-area {
+/* ===== Main actions area ===== */
+.main-actions {
   margin-top: 24px;
   display: flex;
-  justify-content: center;
+  align-items: center;
+  justify-content: space-between;
 }
 
-.save-area .btn {
-  padding: 10px 32px;
+.main-actions-right {
+  display: flex;
+  gap: 10px;
+}
+
+.main-actions .btn {
+  padding: 10px 24px;
   font-size: 15px;
+}
+
+.btn-danger-outline {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 500;
+  border: 1.5px solid var(--danger);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--danger);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+}
+
+.btn-danger-outline:hover {
+  background: var(--danger);
+  color: #fff;
 }
 
 /* ===== Modal ===== */

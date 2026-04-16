@@ -649,6 +649,46 @@ export function initMain(): void {
     updateDateDisplay();
   });
 
+  // 全てコピー
+  document.getElementById('copyAllBtn')!.addEventListener('click', async () => {
+    if (!currentReportDate) {
+      showToast('日付を先に選択してください', 'error');
+      document.getElementById('mainDateInput')?.focus();
+      return;
+    }
+    const settings = getSettings();
+    const parts: string[] = [];
+
+    for (const cat of settings.categories) {
+      if (!selectedCategoryIds.has(cat.id)) continue;
+
+      if (cat.isEmail) {
+        const emailEntry = currentEntries.find((en) => en.categoryId === cat.id);
+        const selEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+        const selected: string[] = selEntry ? JSON.parse(selEntry.value || '[]') : [];
+        const masterOrder = settings.emailList.map(toFullEmail).filter(Boolean);
+        const emailOutput = masterOrder.filter((email) => selected.includes(email)).join('; ');
+        if (emailOutput) parts.push(emailOutput);
+      } else {
+        const output = generateCategoryOutput(cat, currentEntries, settings.emailAddresses);
+        if (output.trim()) parts.push(output);
+      }
+    }
+
+    if (parts.length === 0) {
+      showToast('コピーする入力がありません', 'error');
+      return;
+    }
+
+    const fullOutput = parts.join('\n\n');
+    navigator.clipboard.writeText(fullOutput).then(() => {
+      const btn = document.getElementById('copyAllBtn')!;
+      btn.textContent = '✓ コピー済み';
+      showToast('全項目をコピーしました', 'success');
+      setTimeout(() => { btn.textContent = '全てコピー'; }, 2000);
+    }).catch(() => showToast('コピーに失敗しました', 'error'));
+  });
+
   document.getElementById('resetAllBtn')!.addEventListener('click', async () => {
     const ok = await showConfirm('すべての入力内容をリセットしますか？\n（設定・履歴は消えません）', 'リセット');
     if (!ok) return;
