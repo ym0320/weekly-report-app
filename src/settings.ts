@@ -644,9 +644,23 @@ function switchSettingsTab(tabId: string): void {
   });
 }
 
-// navigateToSettingsTab is called from main.ts email edit button
 export function navigateToSettingsTab(tabId: string): void {
   switchSettingsTab(tabId);
+}
+
+export function scrollToSettingsCategory(catId: string): void {
+  const el = document.querySelector(`.cat-item[data-cat-id="${catId}"]`) as HTMLElement | null;
+  if (!el) return;
+  // アコーディオンを展開
+  const body = el.querySelector('.cat-item-body') as HTMLElement | null;
+  if (body && !body.classList.contains('open')) {
+    body.classList.add('open');
+    const toggleBtn = el.querySelector('.cat-item-header .btn-secondary') as HTMLElement | null;
+    if (toggleBtn) toggleBtn.textContent = '▶';
+  }
+  el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  el.style.outline = '2px solid var(--primary)';
+  setTimeout(() => { el.style.outline = ''; }, 2000);
 }
 
 // ===== Init (exported, called by router) =====

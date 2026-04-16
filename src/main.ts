@@ -10,7 +10,7 @@ import {
 } from './storage';
 import { generateCategoryOutput, generateId, toFullEmail } from './utils';
 import { navigateTo } from './app';
-import { navigateToSettingsTab } from './settings';
+import { navigateToSettingsTab, scrollToSettingsCategory } from './settings';
 
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
@@ -249,6 +249,9 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     const textarea = document.createElement('textarea');
     textarea.className = 'field-textarea';
     textarea.value = value;
+    if (category.name === '特記事項' && !subItem.defaultValue) {
+      textarea.placeholder = 'エリアルールに基づき、記載してください。';
+    }
     textarea.addEventListener('input', () => {
       setSubItemValue(category.id, subItem.id, textarea.value);
     });
@@ -264,6 +267,9 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     const textarea = document.createElement('textarea');
     textarea.className = 'field-textarea';
     textarea.value = value;
+    if (subItem.label.endsWith('内容')) {
+      textarea.placeholder = '※テーマが複数ある場合は、テーマ毎に分けて記載';
+    }
     textarea.addEventListener('input', () => {
       setSubItemValue(category.id, subItem.id, textarea.value);
     });
@@ -470,6 +476,21 @@ function renderActiveCard(category: Category): HTMLElement {
 
   headerLeft.appendChild(icon);
   headerLeft.appendChild(nameSpan);
+
+  // 特記事項: 登録/編集リンク
+  if (category.name === '特記事項') {
+    const tokkiSub = category.subItems[0];
+    const tokkiBtn = document.createElement('button');
+    tokkiBtn.className = 'btn-inline-link';
+    tokkiBtn.textContent = tokkiSub?.defaultValue ? '編集' : '登録';
+    tokkiBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      navigateTo('settings');
+      navigateToSettingsTab('design');
+      setTimeout(() => scrollToSettingsCategory('cat-7'), 100);
+    });
+    headerLeft.appendChild(tokkiBtn);
+  }
 
   const headerRight = document.createElement('div');
   headerRight.className = 'category-header-right';
