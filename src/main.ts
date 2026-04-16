@@ -355,7 +355,7 @@ function renderSubItem(category: Category, subItem: SubItem): HTMLElement {
     textarea.className = 'field-textarea';
     textarea.value = value;
     if (subItem.label.endsWith('内容')) {
-      textarea.placeholder = '※テーマが複数ある場合は、テーマ毎に分けて記載';
+      textarea.placeholder = 'テーマが複数ある場合は、テーマ毎に分けて記載';
     }
     textarea.addEventListener('input', () => {
       setSubItemValue(category.id, subItem.id, textarea.value);
