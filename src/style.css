@@ -923,6 +923,20 @@ body {
   border-color: var(--primary);
 }
 
+.search-date-select {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-family: inherit;
+  outline: none;
+  background: var(--surface);
+}
+
+.search-date-select:focus {
+  border-color: var(--primary);
+}
+
 .search-text {
   flex: 1;
   min-width: 180px;

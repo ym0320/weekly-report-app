@@ -6,6 +6,7 @@ import type { CategoryEntry } from './types';
 // ===== State =====
 let allReports: WeeklyReport[] = [];
 let historyInitialized = false;
+let hasSearched = false;
 
 function showConfirm(message: string, okLabel = '確認'): Promise<boolean> {
   return new Promise((resolve) => {
@@ -91,10 +92,18 @@ function renderHistory(): void {
   const list = document.getElementById('historyList')!;
   list.innerHTML = '';
 
+  if (!hasSearched) {
+    const hint = document.createElement('div');
+    hint.className = 'history-empty';
+    hint.textContent = '条件を指定して「検索」を押してください';
+    list.appendChild(hint);
+    return;
+  }
+
   if (filtered.length === 0) {
     const empty = document.createElement('div');
     empty.className = 'history-empty';
-    empty.textContent = '履歴がありません';
+    empty.textContent = '該当する履歴がありません';
     list.appendChild(empty);
     return;
   }
@@ -221,17 +230,53 @@ function renderHistory(): void {
   }
 }
 
+// ===== Populate date select =====
+function populateDateSelect(): void {
+  const sel = document.getElementById('dateSelect') as HTMLSelectElement;
+  if (!sel) return;
+  sel.innerHTML = '';
+
+  const emptyOpt = document.createElement('option');
+  emptyOpt.value = '';
+  emptyOpt.textContent = '-- 日付を選択 --';
+  sel.appendChild(emptyOpt);
+
+  const dates = [...new Set(allReports.map((r) => r.date))].sort((a, b) => b.localeCompare(a));
+  for (const d of dates) {
+    const opt = document.createElement('option');
+    opt.value = d;
+    opt.textContent = formatDate(d);
+    sel.appendChild(opt);
+  }
+}
+
+function doSearch(): void {
+  hasSearched = true;
+  renderHistory();
+}
+
 // ===== Init (exported, called by router) =====
 export function initHistory(): void {
-  // 毎回: 最新データを読み込んで再レンダリング
   allReports = getReports();
+  hasSearched = false;
   renderHistory();
+  populateDateSelect();
 
-  // 一度だけ: フィルター入力のイベント登録
   if (historyInitialized) return;
   historyInitialized = true;
 
-  document.getElementById('dateFrom')!.addEventListener('input', renderHistory);
-  document.getElementById('dateTo')!.addEventListener('input', renderHistory);
-  document.getElementById('searchText')!.addEventListener('input', renderHistory);
+  const searchBtn = document.getElementById('searchBtn')!;
+  searchBtn.addEventListener('click', doSearch);
+
+  const dateSelect = document.getElementById('dateSelect') as HTMLSelectElement;
+  dateSelect.addEventListener('change', () => {
+    const dateFrom = document.getElementById('dateFrom') as HTMLInputElement;
+    const dateTo = document.getElementById('dateTo') as HTMLInputElement;
+    dateFrom.value = dateSelect.value;
+    dateTo.value = dateSelect.value;
+  });
+
+  document.getElementById('searchText')!.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') doSearch();
+  });
 }

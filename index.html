@@ -98,6 +98,10 @@
     <main class="main-content">
       <div class="search-area">
         <div class="search-row">
+          <span class="search-label">日付選択:</span>
+          <select id="dateSelect" class="search-date-select"></select>
+        </div>
+        <div class="search-row">
           <span class="search-label">日付で絞り込み:</span>
           <input type="date" id="dateFrom" class="search-date" />
           <span class="search-label">〜</span>
@@ -106,6 +110,9 @@
         <div class="search-row">
           <span class="search-label">フリーワード:</span>
           <input type="text" id="searchText" class="search-text" placeholder="キーワードを入力..." />
+        </div>
+        <div class="search-row" style="justify-content: flex-end;">
+          <button id="searchBtn" class="btn btn-primary btn-sm">検索</button>
         </div>
       </div>
       <div id="historyList" class="history-list"></div>
