@@ -806,6 +806,23 @@ function saveWeeklyReport(): void {
   saveReport(report);
   closeSaveModal();
   showToast('週報を保存しました', 'success');
+
+  // 全リセット（保存後）
+  currentEntries = [];
+  saveCurrentEntries(currentEntries);
+  activityCounts.clear();
+  const s = getSettings();
+  selectedCategoryIds = new Set<string>();
+  for (const cat of s.categories) {
+    if (cat.isEmail) selectedCategoryIds.add(cat.id);
+  }
+  saveSelectedCategoryIds(Array.from(selectedCategoryIds));
+  const today = new Date();
+  currentReportDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  localStorage.setItem(DATE_STORAGE_KEY, currentReportDate);
+  (document.getElementById('mainDateInput') as HTMLInputElement).value = currentReportDate;
+  updateDateDisplay();
+  renderCategories();
 }
 
 // ===== Init (exported, called by router) =====
