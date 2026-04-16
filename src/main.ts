@@ -841,61 +841,68 @@ export function initMain(): void {
     updateDateDisplay();
   });
 
-  // 全てコピー（項目ごとに個別ClipboardItem）
-  document.getElementById('copyAllBtn')!.addEventListener('click', async () => {
+  // 全てコピー（順番コピー）
+  let copyQueue: { name: string; text: string }[] = [];
+  let copyIndex = -1;
+  const copyAllBtn = document.getElementById('copyAllBtn')!;
+
+  function resetCopyQueue(): void {
+    copyQueue = [];
+    copyIndex = -1;
+    copyAllBtn.textContent = '全てコピー';
+    copyAllBtn.classList.remove('btn-primary');
+    copyAllBtn.classList.add('btn-secondary');
+  }
+
+  copyAllBtn.addEventListener('click', async () => {
     if (!currentReportDate) {
       showToast('日付を先に選択してください', 'error');
       document.getElementById('mainDateInput')?.focus();
       return;
     }
-    const settings = getSettings();
-    const items: ClipboardItem[] = [];
 
-    for (const cat of settings.categories) {
-      if (!selectedCategoryIds.has(cat.id)) continue;
-      let text = '';
-
-      if (cat.isEmail) {
-        const emailEntry = currentEntries.find((en) => en.categoryId === cat.id);
-        const selEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
-        const selected: string[] = selEntry ? JSON.parse(selEntry.value || '[]') : [];
-        const masterOrder = settings.emailList.map(toFullEmail).filter(Boolean);
-        text = masterOrder.filter((email) => selected.includes(email)).join('; ');
-      } else {
-        text = generateCategoryOutput(cat, currentEntries, settings.emailAddresses);
+    if (copyIndex === -1) {
+      const settings = getSettings();
+      copyQueue = [];
+      for (const cat of settings.categories) {
+        if (!selectedCategoryIds.has(cat.id)) continue;
+        let text = '';
+        if (cat.isEmail) {
+          const emailEntry = currentEntries.find((en) => en.categoryId === cat.id);
+          const selEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
+          const selected: string[] = selEntry ? JSON.parse(selEntry.value || '[]') : [];
+          const masterOrder = settings.emailList.map(toFullEmail).filter(Boolean);
+          text = masterOrder.filter((email) => selected.includes(email)).join('; ');
+        } else {
+          text = generateCategoryOutput(cat, currentEntries, settings.emailAddresses);
+        }
+        if (text.trim()) copyQueue.push({ name: cat.name, text });
       }
-
-      if (text.trim()) {
-        items.push(new ClipboardItem({ 'text/plain': new Blob([text], { type: 'text/plain' }) }));
+      if (copyQueue.length === 0) {
+        showToast('コピーする入力がありません', 'error');
+        return;
       }
+      copyIndex = 0;
     }
 
-    if (items.length === 0) {
-      showToast('コピーする入力がありません', 'error');
+    const item = copyQueue[copyIndex];
+    try {
+      await navigator.clipboard.writeText(item.text);
+      showToast(`${item.name} をコピー（${copyIndex + 1}/${copyQueue.length}）`, 'success');
+    } catch {
+      showToast('コピーに失敗しました', 'error');
+      resetCopyQueue();
       return;
     }
 
-    try {
-      await navigator.clipboard.write(items);
-      const btn = document.getElementById('copyAllBtn')!;
-      btn.textContent = `✓ ${items.length}項目コピー済み`;
-      showToast(`${items.length}項目を個別にコピーしました`, 'success');
-      setTimeout(() => { btn.textContent = '全てコピー'; }, 2000);
-    } catch {
-      // フォールバック: 結合してwriteText
-      const allText = items.length > 0
-        ? await Promise.all(
-            items.map(async (ci) => {
-              const blob = await ci.getType('text/plain');
-              return blob.text();
-            })
-          ).then((texts) => texts.join('\n\n'))
-        : '';
-      await navigator.clipboard.writeText(allText);
-      const btn = document.getElementById('copyAllBtn')!;
-      btn.textContent = '✓ コピー済み';
-      showToast('全項目を結合してコピーしました', 'success');
-      setTimeout(() => { btn.textContent = '全てコピー'; }, 2000);
+    copyIndex++;
+    if (copyIndex < copyQueue.length) {
+      copyAllBtn.textContent = `次へ: ${copyQueue[copyIndex].name}（${copyIndex + 1}/${copyQueue.length}）`;
+      copyAllBtn.classList.remove('btn-secondary');
+      copyAllBtn.classList.add('btn-primary');
+    } else {
+      copyAllBtn.textContent = '✓ 全項目コピー完了';
+      setTimeout(resetCopyQueue, 2000);
     }
   });
 
