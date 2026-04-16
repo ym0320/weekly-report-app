@@ -82,10 +82,24 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
   wrapper.className = 'field-group';
 
   if (subItem.label) {
-    const lbl = document.createElement('label');
+    const labelRow = document.createElement('div');
+    labelRow.className = 'field-label-row';
+
+    const lbl = document.createElement('span');
     lbl.className = 'field-label';
     lbl.textContent = subItem.label;
-    wrapper.appendChild(lbl);
+
+    const editBtn = document.createElement('button');
+    editBtn.className = 'btn-inline-link';
+    editBtn.textContent = offices.length > 0 ? '編集' : '登録';
+    editBtn.addEventListener('click', () => {
+      navigateTo('settings');
+      navigateToSettingsTab('office');
+    });
+
+    labelRow.appendChild(lbl);
+    labelRow.appendChild(editBtn);
+    wrapper.appendChild(labelRow);
   }
 
   const listId = `office-list-${subItem.id}`;
@@ -107,6 +121,25 @@ function renderOfficeMasterSubItem(category: Category, subItem: SubItem, offices
 
   input.addEventListener('input', () => {
     setSubItemValue(category.id, subItem.id, input.value);
+  });
+
+  // マスター未登録の事務所名をblur時に登録提案
+  input.addEventListener('blur', async () => {
+    const val = input.value.trim();
+    if (!val || offices.includes(val)) return;
+
+    const ok = await showConfirm(`「${val}」は事務所マスターに未登録です。登録しますか？`, '登録する');
+    if (!ok) return;
+
+    const settings = getSettings();
+    settings.offices.push(val);
+    saveSettings(settings);
+    showToast('事務所マスターに登録しました', 'success');
+
+    // datalistを更新
+    const newOpt = document.createElement('option');
+    newOpt.value = val;
+    datalist.appendChild(newOpt);
   });
 
   wrapper.appendChild(input);
