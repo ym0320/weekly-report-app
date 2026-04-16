@@ -440,12 +440,7 @@ function renderInactiveCard(category: Category): HTMLElement {
     card.replaceWith(activeCard);
   };
 
-  header.addEventListener('click', (e) => {
-    if (e.target === addBtn) return;
-    activate();
-  });
-  addBtn.addEventListener('click', (e) => {
-    e.stopPropagation();
+  addBtn.addEventListener('click', () => {
     activate();
   });
 
