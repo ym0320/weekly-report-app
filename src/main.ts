@@ -677,6 +677,8 @@ export function initMain(): void {
     currentEntries = [];
     saveCurrentEntries(currentEntries);
     renderCategories();
+    // 全カードを閉じる
+    document.querySelectorAll('.category-card.open').forEach((el) => el.classList.remove('open'));
     showToast('すべてリセットしました', 'info');
   });
 
