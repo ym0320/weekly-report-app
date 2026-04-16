@@ -841,7 +841,7 @@ export function initMain(): void {
     updateDateDisplay();
   });
 
-  // 全てコピー（順番コピー）
+  // 連続コピー（順番コピー）
   let copyQueue: { name: string; text: string }[] = [];
   let copyIndex = -1;
   const copyAllBtn = document.getElementById('copyAllBtn')!;
@@ -849,7 +849,7 @@ export function initMain(): void {
   function resetCopyQueue(): void {
     copyQueue = [];
     copyIndex = -1;
-    copyAllBtn.textContent = '全てコピー';
+    copyAllBtn.textContent = '連続コピー';
     copyAllBtn.classList.remove('btn-primary');
     copyAllBtn.classList.add('btn-secondary');
   }
