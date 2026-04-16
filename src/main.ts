@@ -20,6 +20,40 @@ const DATE_STORAGE_KEY = 'weeklyReportApp_selectedDate';
 
 let mainInitialized = false;
 const askedMasterUpdate = new Set<string>();
+const activityCounts = new Map<string, number>();
+
+// ===== Multi-activity helpers =====
+function supportsMultiActivity(category: Category): boolean {
+  if (category.isEmail) return false;
+  return category.subItems.some((si) => si.label.endsWith('内容'));
+}
+
+function deriveActivityCount(categoryId: string, subItems: SubItem[]): number {
+  const entry = currentEntries.find((e) => e.categoryId === categoryId);
+  if (!entry) return 1;
+  let count = 1;
+  for (let idx = 1; idx < 20; idx++) {
+    const hasAny = subItems.some((si) => {
+      const id = `${si.id}__${idx}`;
+      return entry.subItemEntries.some((se) => se.subItemId === id && se.value.trim());
+    });
+    if (!hasAny) break;
+    count = idx + 1;
+  }
+  return count;
+}
+
+const CIRCLED_NUMBERS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
+
+function getHeaderSubItem(category: Category): SubItem | undefined {
+  return category.subItems.find((si) => si.useOfficeMaster) ||
+         category.subItems.find((si) => si.type === 'select');
+}
+
+function relabelForMultiActivity(subItem: SubItem, _category: Category, circledIdx: number): SubItem {
+  const cleanLabel = subItem.label.replace(/^\(\d+\)\s*/, '');
+  return { ...subItem, label: `${CIRCLED_NUMBERS[circledIdx] || `(${circledIdx + 1})`}${cleanLabel}` };
+}
 
 // ===== Date display =====
 function updateDateDisplay(): void {
@@ -348,6 +382,55 @@ function renderBodyInner(category: Category): HTMLElement {
         bodyInner.appendChild(row);
       });
     }
+  } else if (supportsMultiActivity(category)) {
+    const count = activityCounts.get(category.id) || deriveActivityCount(category.id, category.subItems);
+    activityCounts.set(category.id, count);
+    const isMulti = count > 1;
+    const headerSi = isMulti ? getHeaderSubItem(category) : undefined;
+    const otherSis = isMulti ? category.subItems.filter((si) => si !== headerSi) : category.subItems;
+
+    for (let actIdx = 0; actIdx < count; actIdx++) {
+      const idSuffix = actIdx === 0 ? '' : `__${actIdx}`;
+
+      if (isMulti) {
+        const sep = document.createElement('div');
+        sep.className = 'activity-separator';
+        sep.textContent = `(${actIdx + 1})`;
+        bodyInner.appendChild(sep);
+
+        // ヘッダー項目（事務所名 or テーマ）を表示
+        if (headerSi) {
+          const proxied = { ...headerSi, id: `${headerSi.id}${idSuffix}` };
+          bodyInner.appendChild(renderSubItem(category, proxied));
+        }
+
+        // 残りの項目を①②表記で表示
+        let circledIdx = 0;
+        for (const si of otherSis) {
+          const relabeled = relabelForMultiActivity(si, category, circledIdx);
+          const proxied = { ...relabeled, id: `${si.id}${idSuffix}` };
+          bodyInner.appendChild(renderSubItem(category, proxied));
+          circledIdx++;
+        }
+      } else {
+        for (const subItem of category.subItems) {
+          bodyInner.appendChild(renderSubItem(category, subItem));
+        }
+      }
+    }
+
+    const addBtn = document.createElement('button');
+    addBtn.className = 'btn btn-secondary btn-sm add-activity-btn';
+    addBtn.textContent = `${count + 1}つ目の活動を登録する`;
+    addBtn.addEventListener('click', () => {
+      activityCounts.set(category.id, count + 1);
+      const card = document.querySelector(`[data-category-id="${category.id}"]`) as HTMLElement;
+      if (card) {
+        const newCard = renderActiveCard(category);
+        card.replaceWith(newCard);
+      }
+    });
+    bodyInner.appendChild(addBtn);
   } else {
     for (const subItem of category.subItems) {
       bodyInner.appendChild(renderSubItem(category, subItem));
@@ -398,10 +481,15 @@ function isCategoryComplete(category: Category): boolean {
   }
   const entry = currentEntries.find((e) => e.categoryId === category.id);
   if (!entry) return false;
-  return category.subItems.every((si) => {
-    const se = entry.subItemEntries.find((e) => e.subItemId === si.id);
-    return se && se.value.trim() !== '';
-  });
+  const count = activityCounts.get(category.id) || 1;
+  for (let actIdx = 0; actIdx < count; actIdx++) {
+    for (const si of category.subItems) {
+      const id = actIdx === 0 ? si.id : `${si.id}__${actIdx}`;
+      const se = entry.subItemEntries.find((e) => e.subItemId === id);
+      if (!se || !se.value.trim()) return false;
+    }
+  }
+  return true;
 }
 
 function updateCardStatus(card: HTMLElement, category: Category): void {
@@ -753,7 +841,8 @@ export function initMain(): void {
     if (!ok) return;
     currentEntries = [];
     saveCurrentEntries(currentEntries);
-    // 選択状態もクリア（メールカテゴリは維持）
+    // 選択状態・活動数もクリア
+    activityCounts.clear();
     const settings2 = getSettings();
     selectedCategoryIds = new Set<string>();
     for (const cat of settings2.categories) {
