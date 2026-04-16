@@ -432,7 +432,8 @@ function renderActiveCard(category: Category): HTMLElement {
   resetBtn.className = 'btn btn-ghost btn-sm';
 
   if (category.isEmail) {
-    resetBtn.textContent = '編集';
+    const settings = getSettings();
+    resetBtn.textContent = settings.emailList.length > 0 ? '編集' : '登録';
   } else {
     resetBtn.textContent = 'リセット';
   }
