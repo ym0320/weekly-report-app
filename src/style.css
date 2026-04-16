@@ -367,6 +367,10 @@ body {
   min-height: 72px;
 }
 
+.field-textarea-lg {
+  min-height: 144px;
+}
+
 .field-select {
   cursor: pointer;
 }
