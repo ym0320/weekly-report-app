@@ -47,7 +47,8 @@ function generateSingleOutput(category: Category, entry: CategoryEntry): string 
       if (prefixMatch) {
         const indent = ' '.repeat(prefixMatch[0].length);
         lines.push(subItem.label);
-        lines.push(indent + value);
+        const valueLines = value.split('\n');
+        lines.push(...valueLines.map((l) => indent + l));
       } else {
         lines.push(`${subItem.label}: ${value}`);
       }
@@ -63,6 +64,11 @@ function generateMultiOutput(category: Category, entry: CategoryEntry, actCount:
 
   for (let actIdx = 0; actIdx < actCount; actIdx++) {
     const getId = (si: SubItem) => actIdx === 0 ? si.id : `${si.id}__${actIdx}`;
+
+    // 2つ目以降は空行を挟む
+    if (actIdx > 0) {
+      lines.push('');
+    }
 
     // ヘッダー: (N) 事務所名 or テーマ名
     if (headerSi) {
@@ -82,15 +88,21 @@ function generateMultiOutput(category: Category, entry: CategoryEntry, actCount:
       circledIdx++;
 
       const cleanLabel = si.label.replace(/^\(\d+\)\s*/, '');
+      const indent = '    ';
 
       if (si.label.includes('●')) {
         const cleanInline = si.label.replace(/^\(\d+\)\s*/, '').replace('●', value);
         lines.push(`  ${circle}${cleanInline}`);
       } else if (cleanLabel) {
         lines.push(`  ${circle}${cleanLabel}`);
-        lines.push(`    ${value}`);
+        const valueLines = value.split('\n');
+        lines.push(...valueLines.map((l) => indent + l));
       } else {
-        lines.push(`  ${circle}${value}`);
+        const valueLines = value.split('\n');
+        lines.push(`  ${circle}${valueLines[0]}`);
+        for (let i = 1; i < valueLines.length; i++) {
+          lines.push(indent + valueLines[i]);
+        }
       }
     }
   }
