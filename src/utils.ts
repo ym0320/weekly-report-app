@@ -1,6 +1,6 @@
 import type { Category, CategoryEntry } from './types';
 
-export const EMAIL_DOMAIN = '@tkc.ne.jp';
+export const EMAIL_DOMAIN = '@tkc.co.jp';
 
 /** メールプレフィックスからフルアドレスに変換 */
 export function toFullEmail(prefix: string): string {
