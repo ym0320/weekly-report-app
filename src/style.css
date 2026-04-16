@@ -415,13 +415,20 @@ body {
 
 /* ===== Multi-activity ===== */
 .activity-separator {
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
   font-size: 13px;
   font-weight: 600;
   color: var(--primary);
   padding: 10px 0 4px;
   margin-top: 8px;
   border-top: 1px dashed rgba(37, 99, 235, 0.3);
+}
+
+.activity-del-btn {
+  padding: 2px 8px;
 }
 
 .add-activity-btn {

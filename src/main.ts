@@ -45,6 +45,59 @@ function deriveActivityCount(categoryId: string, subItems: SubItem[]): number {
 
 const CIRCLED_NUMBERS = ['①', '②', '③', '④', '⑤', '⑥', '⑦', '⑧', '⑨', '⑩'];
 
+function removeActivity(category: Category, actIdx: number): void {
+  const count = activityCounts.get(category.id) || 1;
+  const entry = currentEntries.find((e) => e.categoryId === category.id);
+
+  if (entry) {
+    // 全活動のデータを収集（削除対象をスキップ）
+    const kept: { baseId: string; value: string }[][] = [];
+    for (let i = 0; i < count; i++) {
+      if (i === actIdx) continue;
+      const group: { baseId: string; value: string }[] = [];
+      for (const si of category.subItems) {
+        const id = i === 0 ? si.id : `${si.id}__${i}`;
+        const se = entry.subItemEntries.find((e) => e.subItemId === id);
+        if (se) group.push({ baseId: si.id, value: se.value });
+      }
+      kept.push(group);
+    }
+
+    // 全活動エントリを削除
+    const allIds = new Set<string>();
+    for (let i = 0; i < count; i++) {
+      for (const si of category.subItems) {
+        allIds.add(i === 0 ? si.id : `${si.id}__${i}`);
+      }
+    }
+    entry.subItemEntries = entry.subItemEntries.filter((se) => !allIds.has(se.subItemId));
+
+    // 連番を詰めて再書き込み
+    kept.forEach((group, newIdx) => {
+      for (const item of group) {
+        const newId = newIdx === 0 ? item.baseId : `${item.baseId}__${newIdx}`;
+        entry.subItemEntries.push({ subItemId: newId, value: item.value });
+      }
+    });
+
+    saveCurrentEntries(currentEntries);
+  }
+
+  const newCount = count - 1;
+  if (newCount <= 1) {
+    activityCounts.delete(category.id);
+  } else {
+    activityCounts.set(category.id, newCount);
+  }
+
+  // カード再描画
+  const card = document.querySelector(`[data-category-id="${category.id}"]`) as HTMLElement;
+  if (card) {
+    const newCard = renderActiveCard(category);
+    card.replaceWith(newCard);
+  }
+}
+
 function getHeaderSubItem(category: Category): SubItem | undefined {
   return category.subItems.find((si) => si.useOfficeMaster) ||
          category.subItems.find((si) => si.type === 'select');
@@ -395,7 +448,19 @@ function renderBodyInner(category: Category): HTMLElement {
       if (isMulti) {
         const sep = document.createElement('div');
         sep.className = 'activity-separator';
-        sep.textContent = `(${actIdx + 1})`;
+
+        const sepLabel = document.createElement('span');
+        sepLabel.textContent = `(${actIdx + 1})`;
+        sep.appendChild(sepLabel);
+
+        const delActBtn = document.createElement('button');
+        delActBtn.className = 'btn btn-danger btn-sm activity-del-btn';
+        delActBtn.textContent = '削除';
+        delActBtn.addEventListener('click', () => {
+          removeActivity(category, actIdx);
+        });
+        sep.appendChild(delActBtn);
+
         bodyInner.appendChild(sep);
 
         // ヘッダー項目（事務所名 or テーマ）を表示
