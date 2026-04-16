@@ -8,6 +8,7 @@ import {
   saveSelectedCategoryIds,
 } from './storage';
 import { generateCategoryOutput, generateId, toFullEmail } from './utils';
+import { navigateTo } from './app';
 
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
@@ -405,7 +406,12 @@ function renderActiveCard(category: Category): HTMLElement {
 
   const resetBtn = document.createElement('button');
   resetBtn.className = 'btn btn-ghost btn-sm';
-  resetBtn.textContent = 'リセット';
+
+  if (category.isEmail) {
+    resetBtn.textContent = '編集';
+  } else {
+    resetBtn.textContent = 'リセット';
+  }
 
   const deselectBtn = document.createElement('button');
   deselectBtn.className = 'btn-deselect';
@@ -447,7 +453,9 @@ function renderActiveCard(category: Category): HTMLElement {
       const emailEntry = currentEntries.find((en) => en.categoryId === category.id);
       const selEntry = emailEntry?.subItemEntries.find((se) => se.subItemId === '__email_selection__');
       const selected: string[] = selEntry ? JSON.parse(selEntry.value || '[]') : [];
-      output = selected.join('; ');
+      const settings2 = getSettings();
+      const masterOrder = settings2.emailList.map(toFullEmail).filter(Boolean);
+      output = masterOrder.filter((email) => selected.includes(email)).join('; ');
     } else {
       const settings = getSettings();
       output = generateCategoryOutput(category, currentEntries, settings.emailAddresses);
@@ -472,9 +480,13 @@ function renderActiveCard(category: Category): HTMLElement {
     });
   });
 
-  // Reset button
+  // Reset / Edit button
   resetBtn.addEventListener('click', async (e) => {
     e.stopPropagation();
+    if (category.isEmail) {
+      navigateTo('settings');
+      return;
+    }
     const ok = await showConfirm(`「${category.name}」の入力内容をリセットしますか？`, 'リセット');
     if (!ok) return;
     currentEntries = currentEntries.filter((en) => en.categoryId !== category.id);
@@ -579,6 +591,11 @@ export function initMain(): void {
   mainInitialized = true;
 
   currentReportDate = localStorage.getItem(DATE_STORAGE_KEY) ?? '';
+  if (!currentReportDate) {
+    const today = new Date();
+    currentReportDate = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    localStorage.setItem(DATE_STORAGE_KEY, currentReportDate);
+  }
   const mainDateInput = document.getElementById('mainDateInput') as HTMLInputElement;
   mainDateInput.value = currentReportDate;
   updateDateDisplay();
@@ -587,6 +604,15 @@ export function initMain(): void {
     currentReportDate = mainDateInput.value;
     localStorage.setItem(DATE_STORAGE_KEY, currentReportDate);
     updateDateDisplay();
+  });
+
+  document.getElementById('resetAllBtn')!.addEventListener('click', async () => {
+    const ok = await showConfirm('すべての入力内容をリセットしますか？\n（設定・履歴は消えません）', 'リセット');
+    if (!ok) return;
+    currentEntries = [];
+    saveCurrentEntries(currentEntries);
+    renderCategories();
+    showToast('すべてリセットしました', 'info');
   });
 
   document.getElementById('saveBtn')!.addEventListener('click', openSaveModal);

@@ -137,9 +137,9 @@ body {
 
 /* ===== Main content ===== */
 .main-content {
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 20px 16px 80px;
+  padding: 24px 32px 80px;
 }
 
 .page-toolbar {
@@ -190,13 +190,23 @@ body {
   color: var(--text);
 }
 
-/* ===== Category cards ===== */
+/* ===== Category cards (glassmorphism) ===== */
 .category-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
   margin-bottom: 10px;
   overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+
+.category-card.selected {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(200, 210, 230, 0.6);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .category-header {
@@ -206,23 +216,19 @@ body {
   padding: 12px 16px;
   user-select: none;
   transition: background 0.1s;
-  background: var(--bg);
+  background: transparent;
 }
 
 .category-card .category-header:hover {
-  background: #eef0f5;
+  background: rgba(0, 0, 0, 0.02);
 }
 
 .category-card.selected .category-header {
-  background: var(--surface);
+  background: transparent;
 }
 
 .category-card.selected .category-header-left:hover {
-  background: var(--accent);
-}
-
-.category-card.selected {
-  border-left: 3px solid var(--primary);
+  background: rgba(0, 0, 0, 0.03);
 }
 
 .category-header-left {
@@ -272,7 +278,7 @@ body {
 
 .category-body-inner {
   padding: 16px;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -366,17 +372,20 @@ body {
 
 /* ===== Report date card ===== */
 .report-date-card {
-  background: var(--surface);
-  border: 2px solid var(--border);
-  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
   padding: 14px 16px;
   margin-bottom: 16px;
-  transition: border-color 0.2s;
-  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .report-date-card.has-date {
-  border-color: var(--primary);
+  border-color: rgba(37, 99, 235, 0.3);
+  box-shadow: 0 4px 16px rgba(37, 99, 235, 0.06);
 }
 
 .report-date-top {
@@ -554,11 +563,14 @@ body {
 
 /* ===== Settings page ===== */
 .settings-section {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
   padding: 20px;
   margin-bottom: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
 .settings-section h2 {

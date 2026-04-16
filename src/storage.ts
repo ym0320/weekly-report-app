@@ -88,6 +88,12 @@ export function saveReport(report: WeeklyReport): void {
   saveData(data);
 }
 
+export function deleteReport(reportId: string): void {
+  const data = loadData();
+  data.reports = data.reports.filter((r) => r.id !== reportId);
+  saveData(data);
+}
+
 export function getCurrentEntries(): CategoryEntry[] {
   const raw = localStorage.getItem(CURRENT_ENTRIES_KEY);
   if (!raw) return [];
