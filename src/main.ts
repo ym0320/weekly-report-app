@@ -456,7 +456,7 @@ function renderInactiveCard(category: Category): HTMLElement {
 // ===== Render active card =====
 function renderActiveCard(category: Category): HTMLElement {
   const card = document.createElement('div');
-  card.className = 'category-card selected open';
+  card.className = `category-card selected open${category.isEmail ? ' email-card' : ''}`;
   card.dataset.categoryId = category.id;
 
   const header = document.createElement('div');

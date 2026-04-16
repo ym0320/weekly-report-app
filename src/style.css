@@ -216,6 +216,13 @@ body {
   box-shadow: 0 4px 16px rgba(37, 99, 235, 0.06);
 }
 
+/* メールアドレスカード: 白 */
+.category-card.selected.email-card {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(200, 210, 230, 0.6);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
 /* 選択中＋全入力済み: 薄い緑 */
 .category-card.selected.complete {
   background: rgba(220, 252, 231, 0.6);
