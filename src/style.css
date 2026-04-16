@@ -599,6 +599,60 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
+/* ===== Settings tabs ===== */
+.settings-tabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 2px solid var(--border);
+  margin-bottom: 20px;
+}
+
+.settings-tab {
+  flex: 1;
+  padding: 10px 8px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+
+.settings-tab:hover {
+  color: var(--text);
+}
+
+.settings-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.settings-tab-panel {
+  display: none;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  animation: pageFadeIn 0.15s ease;
+}
+
+.settings-tab-panel.active {
+  display: block;
+}
+
+.tab-hint {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+}
+
 .settings-section h2 {
   font-size: 15px;
   font-weight: 600;

@@ -10,6 +10,7 @@ import {
 } from './storage';
 import { generateCategoryOutput, generateId, toFullEmail } from './utils';
 import { navigateTo } from './app';
+import { navigateToSettingsTab } from './settings';
 
 // ===== State =====
 let currentEntries: CategoryEntry[] = [];
@@ -508,6 +509,7 @@ function renderActiveCard(category: Category): HTMLElement {
     e.stopPropagation();
     if (category.isEmail) {
       navigateTo('settings');
+      navigateToSettingsTab('email');
       return;
     }
     const ok = await showConfirm(`「${category.name}」の入力内容をリセットしますか？`, 'リセット');

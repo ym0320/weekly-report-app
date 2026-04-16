@@ -613,6 +613,21 @@ function doSaveSettings(): void {
   showToast('設定を保存しました', 'success');
 }
 
+// ===== Tab switching =====
+function switchSettingsTab(tabId: string): void {
+  document.querySelectorAll<HTMLElement>('.settings-tab').forEach((t) => {
+    t.classList.toggle('active', t.dataset.settingsTab === tabId);
+  });
+  document.querySelectorAll<HTMLElement>('.settings-tab-panel').forEach((p) => {
+    p.classList.toggle('active', p.id === `settingsTab-${tabId}`);
+  });
+}
+
+// navigateToSettingsTab is called from main.ts email edit button
+export function navigateToSettingsTab(tabId: string): void {
+  switchSettingsTab(tabId);
+}
+
 // ===== Init (exported, called by router) =====
 export function initSettings(): () => boolean {
   // 毎回: ストレージから再読み込み＆再レンダリング
@@ -629,20 +644,18 @@ export function initSettings(): () => boolean {
   renderOfficeList();
   renderCatList();
 
-  // 設定編集エリアをリセット（再訪時は閉じた状態に）
-  const designEditArea = document.getElementById('designEditArea')!;
-  const editDesignBtn = document.getElementById('editDesignBtn')!;
-  designEditArea.style.display = 'none';
-  editDesignBtn.textContent = '編集';
+  // タブを初期状態に（メールタブをアクティブに）
+  switchSettingsTab('email');
 
   // 一度だけ: 静的要素のイベントリスナー登録
   if (settingsInitialized) return () => isDirty;
   settingsInitialized = true;
 
-  editDesignBtn.addEventListener('click', () => {
-    const isOpen = designEditArea.style.display !== 'none';
-    designEditArea.style.display = isOpen ? 'none' : 'block';
-    editDesignBtn.textContent = isOpen ? '編集' : '完了';
+  // タブ切り替え
+  document.querySelectorAll<HTMLElement>('[data-settings-tab]').forEach((tab) => {
+    tab.addEventListener('click', () => {
+      switchSettingsTab(tab.dataset.settingsTab!);
+    });
   });
 
   const newEmailInput = document.getElementById('newEmailInput') as HTMLInputElement;

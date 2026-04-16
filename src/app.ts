@@ -79,5 +79,12 @@ document.addEventListener('click', async (e) => {
   await navigateTo(el.dataset.navigate as PageId);
 });
 
+// ===== ブラウザ閉じ/リロード時の確認 =====
+window.addEventListener('beforeunload', (e) => {
+  if (currentPage === 'settings' && getSettingsDirty?.()) {
+    e.preventDefault();
+  }
+});
+
 // ===== 初期表示 =====
 navigateTo('main');
