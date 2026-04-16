@@ -399,6 +399,7 @@ function isCategoryComplete(category: Category): boolean {
 }
 
 function updateCardStatus(card: HTMLElement, category: Category): void {
+  if (category.isEmail) return;
   card.classList.toggle('complete', isCategoryComplete(category));
 }
 
