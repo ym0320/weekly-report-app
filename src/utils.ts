@@ -72,7 +72,7 @@ function generateMultiOutput(category: Category, entry: CategoryEntry, actCount:
       }
     }
 
-    // 他の項目: ①②形式
+    // 他の項目: ①②形式（ラベル行+インデント値行で列揃え）
     let circledIdx = 0;
     for (const si of otherSis) {
       const value = entry.subItemEntries.find((se) => se.subItemId === getId(si))?.value?.trim() ?? '';
@@ -87,7 +87,8 @@ function generateMultiOutput(category: Category, entry: CategoryEntry, actCount:
         const cleanInline = si.label.replace(/^\(\d+\)\s*/, '').replace('●', value);
         lines.push(`  ${circle}${cleanInline}`);
       } else if (cleanLabel) {
-        lines.push(`  ${circle}${cleanLabel}: ${value}`);
+        lines.push(`  ${circle}${cleanLabel}`);
+        lines.push(`    ${value}`);
       } else {
         lines.push(`  ${circle}${value}`);
       }
